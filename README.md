@@ -2,10 +2,6 @@
 
 A comprehensive collection of production-ready observability and monitoring solutions for Kubernetes environments, enterprise platforms, and learning purposes.
 
-## Project Overview
-
-This mono-repo contains multiple observability stack implementations, each with complete deployment automation, intelligent connection management, and comprehensive documentation. From open-source solutions to enterprise platforms, everything you need for modern observability.
-
 ## Quick Start Guide
 
 ### Choose Your Observability Journey
@@ -30,7 +26,7 @@ cd grafana-cxtm-poc
 #### **Advanced - Enterprise**
 ```bash
 cd splunkO11y-cxtm-poc
-# Follow enterprise deployment guide
+# Yet to do 
 ```
 
 ## Learning Path Recommendations
@@ -73,26 +69,6 @@ helm version
 kubectl get nodes
 kubectl get namespaces
 ```
-
-## Intelligent Features
-
-### 🧠 **Connection Management** (Grafana CXTM POC)
-- **Smart Detection**: Only fixes broken connections
-- **Non-Disruptive**: Preserves working tunnels  
-- **Auto-Recovery**: Handles network interruptions
-- **Status Monitoring**: Visual connection health
-
-### **Deployment Automation** (Opensource Package)  
-- **One-Command Deploy**: Complete 12-service stack
-- **Health Monitoring**: Automated service checks
-- **Multi-Port Management**: Coordinated port forwarding
-- **Helm Integration**: Professional package management
-
-### 🏢 **Enterprise Integration** (Splunk O11y)
-- **OTEL Instrumentation**: OpenTelemetry integration
-- **Distributed Tracing**: Cross-service observability
-- **Custom Metrics**: Application-specific monitoring
-- **Production Hardening**: Security and performance
 
 ## Repository Structure
 
