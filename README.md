@@ -35,19 +35,19 @@ cd splunkO11y-cxtm-poc
 
 ## Learning Path Recommendations
 
-### **Phase 1: Foundation (Week 1-2)**
+### **Phase 1: Foundation **
 1. **Start**: [`opensource-observability-package`](./opensource-observability-package/)
    - Deploy complete 12-service stack
    - Learn Prometheus, Grafana, Loki basics
    - Understand Kubernetes monitoring patterns
 
-### **Phase 2: External Access (Week 3)**
+### **Phase 2: External Access **
 2. **Expand**: [`grafana-cxtm-poc`](./grafana-cxtm-poc/)
    - Master SSH tunneling techniques
    - Implement intelligent connection management
    - Handle network disruptions gracefully
 
-### **Phase 3: Enterprise (Week 4+)**
+### **Phase 3: Enterprise **
 3. **Scale**: [`splunkO11y-cxtm-poc`](./splunkO11y-cxtm-poc/)
    - Advanced APM and distributed tracing
    - Enterprise-grade observability
@@ -73,17 +73,6 @@ helm version
 kubectl get nodes
 kubectl get namespaces
 ```
-
-## Use Case Matrix
-
-| Use Case | Recommended Project | Why |
-|----------|-------------------|-----|
-| **Learning Observability** | [`opensource-observability-package`](./opensource-observability-package/) | Complete stack, well-documented |
-| **Remote Cluster Monitoring** | [`grafana-cxtm-poc`](./grafana-cxtm-poc/) | SSH tunneling, connection management |
-| **Enterprise Production** | [`splunkO11y-cxtm-poc`](./splunkO11y-cxtm-poc/) | Enterprise-grade, APM capabilities |
-| **Log Analytics Focus** | [`elastic-stack-poc`](./elastic-stack-poc/) | Best-in-class log search |
-| **Cloud-Native Monitoring** | [`datadog-lab`](./datadog-lab/) | Managed service, minimal overhead |
-| **Application Performance** | [`newrelic-setup`](./newrelic-setup/) | APM specialization |
 
 ## Intelligent Features
 
@@ -128,31 +117,6 @@ observability-suite/
 ├── elastic-stack-poc/ (planned)
 ├── datadog-lab/ (planned)
 └── newrelic-setup/ (planned)
-```
-
-
-### **Documentation Standards**
-Each project includes:
-- **Comprehensive README** with step-by-step guides
-- **Architecture diagrams** and explanations  
-- **Troubleshooting guides** with common solutions
-- **Automation scripts** for deployment and management
-- **Connection management** tools (where applicable)
-
-## Contributing
-
-We welcome contributions! Each project has specific contribution guidelines in their individual READMEs.
-
-### **Adding New Observability Solutions**
-```bash
-# Standard project structure
-new-solution-poc/
-├── README.md (comprehensive guide)
-├── deploy.sh (automated deployment) 
-├── check-status.sh (health monitoring)
-├── cleanup.sh (clean removal)
-├── configs/ (configuration files)
-└── docs/ (additional documentation)
 ```
 
 ## Current Project Status
