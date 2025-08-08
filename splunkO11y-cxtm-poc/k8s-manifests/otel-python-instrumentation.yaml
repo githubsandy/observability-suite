@@ -1,0 +1,79 @@
+# OpenTelemetry Auto-Instrumentation Configuration for Python Services
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-python-config
+  namespace: default
+data:
+  # Python auto-instrumentation installation script
+  install-otel.sh: |
+    #\!/bin/bash
+    set -e
+    echo "Installing OpenTelemetry auto-instrumentation packages..."
+    
+    # Install core packages
+    pip install --upgrade pip
+    pip install opentelemetry-api==1.21.0
+    pip install opentelemetry-sdk==1.21.0
+    pip install opentelemetry-exporter-otlp==1.21.0
+    
+    # Install auto-instrumentation packages
+    pip install opentelemetry-instrumentation==0.42b0
+    pip install opentelemetry-bootstrap
+    pip install opentelemetry-instrumentation-flask
+    pip install opentelemetry-instrumentation-requests
+    pip install opentelemetry-instrumentation-redis
+    pip install opentelemetry-instrumentation-pymongo
+    pip install opentelemetry-instrumentation-psycopg2
+    pip install opentelemetry-instrumentation-sqlalchemy
+    pip install opentelemetry-instrumentation-logging
+    
+    # Bootstrap auto-instrumentation
+    opentelemetry-bootstrap -a install
+    
+    echo "OpenTelemetry instrumentation installed successfully"
+    
+  # Startup script with instrumentation
+  otel-startup.sh: |
+    #\!/bin/bash
+    set -e
+    echo "Starting application with OpenTelemetry instrumentation..."
+    
+    # Set OpenTelemetry environment variables
+    export OTEL_SERVICE_NAME="${OTEL_SERVICE_NAME:-unknown-service}"
+    export OTEL_EXPORTER_OTLP_ENDPOINT="http://otel-collector:4318"
+    export OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
+    export OTEL_TRACES_EXPORTER="otlp"
+    export OTEL_METRICS_EXPORTER="otlp"  
+    export OTEL_LOGS_EXPORTER="otlp"
+    export OTEL_PROPAGATORS="tracecontext,baggage"
+    export OTEL_RESOURCE_ATTRIBUTES="deployment.environment=development,k8s.cluster.name=cxtm-dev-cluster,k8s.namespace.name=default"
+    
+    # Enable auto-instrumentation
+    export OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED="true"
+    
+    echo "OTEL_SERVICE_NAME: $OTEL_SERVICE_NAME"
+    echo "OTEL_EXPORTER_OTLP_ENDPOINT: $OTEL_EXPORTER_OTLP_ENDPOINT"
+    
+    # Start application with auto-instrumentation
+    exec opentelemetry-instrument "$@"
+---
+# Init container image for Python OpenTelemetry instrumentation
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-init-requirements
+  namespace: default
+data:
+  requirements.txt: |
+    opentelemetry-api==1.21.0
+    opentelemetry-sdk==1.21.0
+    opentelemetry-exporter-otlp==1.21.0
+    opentelemetry-instrumentation==0.42b0
+    opentelemetry-instrumentation-flask
+    opentelemetry-instrumentation-requests  
+    opentelemetry-instrumentation-redis
+    opentelemetry-instrumentation-pymongo
+    opentelemetry-instrumentation-psycopg2
+    opentelemetry-instrumentation-sqlalchemy
+    opentelemetry-instrumentation-logging

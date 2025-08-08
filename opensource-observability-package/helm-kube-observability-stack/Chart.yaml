@@ -1,0 +1,33 @@
+apiVersion: v2
+name: kube-observability-stack
+description: Comprehensive Kubernetes Observability Stack with Prometheus, Grafana, Loki and Exporters
+
+# Complete 12-service enterprise observability platform for modern test automation and Kubernetes monitoring
+# Includes: Core Stack (Prometheus, Grafana, Loki, Promtail) + Infrastructure Exporters (Node, Blackbox) + 
+# Foundation Exporters (kube-state-metrics, MongoDB, PostgreSQL) + Application Layer (Jenkins, Redis, FastAPI)
+type: application
+
+# Chart version - increment for chart changes
+version: 1.0.0
+
+# Application version - observability stack version
+appVersion: "1.0.0"
+
+# Additional metadata
+home: https://github.com/githubsandy/opensource-observability-package
+sources:
+  - https://github.com/githubsandy/opensource-observability-package
+maintainers:
+  - name: opensource-observability-package
+    email: support@observability.dev
+keywords:
+  - observability
+  - monitoring
+  - prometheus
+  - grafana
+  - loki
+  - kubernetes
+  - exporters
+  - test-automation
+annotations:
+  category: Analytics

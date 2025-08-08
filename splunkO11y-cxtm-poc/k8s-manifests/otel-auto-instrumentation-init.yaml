@@ -1,0 +1,63 @@
+# OpenTelemetry Auto-Instrumentation Init Container
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-auto-instrumentation-init
+  namespace: default
+data:
+  install-otel.sh: |
+    #\!/bin/bash
+    set -ex
+    echo "Installing OpenTelemetry Auto-Instrumentation packages..."
+    
+    # Use the existing Python in the main container's image
+    export PIP_TARGET=/otel-auto-instrumentation
+    export PYTHONUSERBASE=/otel-auto-instrumentation
+    
+    # Install core OpenTelemetry packages
+    pip3 install --user --target /otel-auto-instrumentation         opentelemetry-api==1.21.0         opentelemetry-sdk==1.21.0         opentelemetry-exporter-otlp-proto-http==1.21.0
+    
+    # Install auto-instrumentation packages
+    pip3 install --user --target /otel-auto-instrumentation         opentelemetry-instrumentation==0.42b0         opentelemetry-bootstrap
+    
+    # Install common framework instrumentation
+    pip3 install --user --target /otel-auto-instrumentation         opentelemetry-instrumentation-flask         opentelemetry-instrumentation-requests         opentelemetry-instrumentation-urllib3         opentelemetry-instrumentation-logging         opentelemetry-instrumentation-redis         opentelemetry-instrumentation-pymongo
+    
+    # Create the instrumentation wrapper script
+    cat > /otel-auto-instrumentation/otel-instrument.sh << 'WRAPPER_EOF'
+#\!/bin/bash
+set -e
+
+# Add OpenTelemetry packages to Python path
+export PYTHONPATH="/otel-auto-instrumentation:$PYTHONPATH"
+
+# Set up OpenTelemetry environment
+export OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
+
+echo "Starting with OpenTelemetry auto-instrumentation..."
+echo "OTEL_SERVICE_NAME: $OTEL_SERVICE_NAME"
+echo "OTEL_EXPORTER_OTLP_ENDPOINT: $OTEL_EXPORTER_OTLP_ENDPOINT"
+
+# Use auto-instrumentation to start the application
+exec /otel-auto-instrumentation/bin/opentelemetry-instrument "$@"
+WRAPPER_EOF
+    
+    chmod +x /otel-auto-instrumentation/otel-instrument.sh
+    
+    # Bootstrap auto-instrumentation (installs additional packages)
+    PYTHONPATH=/otel-auto-instrumentation /otel-auto-instrumentation/bin/opentelemetry-bootstrap -a install --target /otel-auto-instrumentation
+    
+    echo "OpenTelemetry auto-instrumentation installed successfully\!"
+    ls -la /otel-auto-instrumentation/
+    
+  requirements.txt: |
+    opentelemetry-api==1.21.0
+    opentelemetry-sdk==1.21.0
+    opentelemetry-exporter-otlp-proto-http==1.21.0
+    opentelemetry-instrumentation==0.42b0
+    opentelemetry-instrumentation-flask
+    opentelemetry-instrumentation-requests
+    opentelemetry-instrumentation-urllib3
+    opentelemetry-instrumentation-logging
+    opentelemetry-instrumentation-redis
+    opentelemetry-instrumentation-pymongo

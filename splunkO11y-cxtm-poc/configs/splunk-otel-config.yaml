@@ -1,0 +1,22 @@
+# Splunk OpenTelemetry Configuration
+splunk:
+  access_token: oksFxD-9HYcsCHBqvvh9mg
+  realm: us1
+  ingest_url: https://ingest.us1.signalfx.com
+  api_url: https://api.us1.signalfx.com
+
+# Environment variables for applications
+environment:
+  OTEL_EXPORTER_OTLP_ENDPOINT: https://ingest.us1.signalfx.com
+  OTEL_EXPORTER_OTLP_HEADERS: X-SF-TOKEN=oksFxD-9HYcsCHBqvvh9mg
+  OTEL_SERVICE_NAME: cxtm-sample-app
+  OTEL_RESOURCE_ATTRIBUTES: deployment.environment=dev,service.version=1.0.0
+  OTEL_TRACES_EXPORTER: otlp
+  OTEL_METRICS_EXPORTER: otlp
+  OTEL_LOGS_EXPORTER: otlp
+
+# Service configuration
+service:
+  name: cxtm-apm-poc
+  version: 1.0.0
+  environment: development

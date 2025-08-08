@@ -1,0 +1,115 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: default
+data:
+  otel-config.yaml: |
+    receivers:
+      # OTLP receiver for application traces and metrics
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+      
+      # Host metrics
+      hostmetrics:
+        collection_interval: 10s
+        scrapers:
+          cpu:
+          disk:
+          filesystem:
+          memory:
+          network:
+          process:
+      
+      # Kubernetes cluster receiver
+      k8s_cluster:
+        collection_interval: 10s
+        
+      # Kubelet stats receiver
+      kubeletstats:
+        collection_interval: 10s
+        auth_type: "serviceAccount"
+        endpoint: "https://${KUBE_NODE_NAME}:10250"
+        insecure_skip_verify: true
+        
+      # Prometheus receiver for existing metrics endpoints
+      prometheus:
+        config:
+          scrape_configs:
+          - job_name: 'cxtm-services'
+            static_configs:
+            - targets: ['cxtm-zipservice:9200', 'cxtm-scheduler:9200', 'cxtm-notifications:9200']
+            metrics_path: /metrics
+            scrape_interval: 15s
+
+    processors:
+      # Batch processor for performance
+      batch:
+        timeout: 1s
+        send_batch_size: 1024
+        
+      # Resource detection processor
+      resource:
+        attributes:
+        - key: k8s.cluster.name
+          value: cxtm-dev-cluster
+          action: insert
+        - key: deployment.environment  
+          value: development
+          action: insert
+          
+      # Memory limiter
+      memory_limiter:
+        limit_mib: 512
+
+    exporters:
+      # Splunk APM/Observability Cloud exporter
+      sapm:
+        access_token: "oksFxD-9HYcsCHBqvvh9mg"
+        endpoint: "https://ingest.us1.signalfx.com/v2/trace"
+        
+      # Splunk HEC for logs
+      splunk_hec:
+        token: "oksFxD-9HYcsCHBqvvh9mg" 
+        endpoint: "https://ingest.us1.signalfx.com/v1/log"
+        source: "otel"
+        sourcetype: "_json"
+        
+      # SignalFx exporter for metrics
+      signalfx:
+        access_token: "oksFxD-9HYcsCHBqvvh9mg"
+        realm: "us1"
+        
+      # Debug/logging exporter
+      logging:
+        loglevel: info
+
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+      pprof:
+        endpoint: 0.0.0.0:1777
+      zpages:
+        endpoint: 0.0.0.0:55679
+
+    service:
+      extensions: [health_check, pprof, zpages]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, resource, batch]
+          exporters: [sapm, logging]
+          
+        metrics:
+          receivers: [otlp, hostmetrics, k8s_cluster, kubeletstats, prometheus]
+          processors: [memory_limiter, resource, batch]
+          exporters: [signalfx, logging]
+          
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, resource, batch] 
+          exporters: [splunk_hec, logging]
