@@ -1,79 +1,186 @@
 
 ## 📊 Current Deployment Status
 
-### **Grafana Configuration:**
+### **Complete Monitoring Stack:**
 - **Namespace:** `ao`
 - **Node:** `uta-k8s-ao-01`
+- **Components:** Grafana + Prometheus
+
+### **Grafana Configuration:**
 - **Service Type:** `NodePort`
 - **Internal Port:** `3000`
 - **NodePort:** `30300`
-- **Data Sources:** None (cleaned up)
+- **Data Sources:** Prometheus (http://prometheus:9090)
+
+### **Prometheus Configuration:**
+- **Service Type:** `NodePort`
+- **Internal Port:** `9090`
+- **NodePort:** `30090`
+- **Monitoring:** Kubernetes cluster, pods, services, nodes
 
 ### **Access URLs:**
-- **Direct:** `http://10.122.28.111:30300`
-- **Tunneled:** `http://localhost:3000`
+- **Grafana Direct:** `http://10.122.28.111:30300`
+- **Prometheus Direct:** `http://10.122.28.111:30090`
+- **Grafana Tunneled:** `http://localhost:3000`
 
 ### **Login Credentials:**
-- **Username:** `admin`
-- **Password:** `admin123`
+- **Grafana Username:** `admin`
+- **Grafana Password:** `admin123`
+- **Prometheus:** No authentication required
 
 ---
 
 ## 🛠️ Management Commands
 
-### **Check Grafana Status:**
+### **Deploy Complete Monitoring Stack:**
 ```bash
-kubectl get pods,svc -n ao | grep grafana
-kubectl logs -n ao deployment/grafana --tail=20
+# Deploy both Grafana and Prometheus
+./deploy-complete-monitoring.sh
 ```
 
-### **Restart Grafana:**
+### **Check Full Stack Status:**
 ```bash
+kubectl get pods,svc -n ao
+kubectl get all -n ao
+```
+
+### **Grafana Management:**
+```bash
+# Check Grafana status
+kubectl get pods,svc -n ao | grep grafana
+kubectl logs -n ao deployment/grafana --tail=20
+
+# Restart Grafana
 kubectl rollout restart deployment/grafana -n ao
 kubectl rollout status deployment/grafana -n ao
 ```
 
+### **Prometheus Management:**
+```bash
+# Check Prometheus status
+kubectl get pods,svc -n ao | grep prometheus
+kubectl logs -n ao deployment/prometheus --tail=20
+
+# Restart Prometheus
+kubectl rollout restart deployment/prometheus -n ao
+kubectl rollout status deployment/prometheus -n ao
+```
+
 ### **Update Configuration:**
 ```bash
-# After editing grafana-config.yaml locally
+# After editing config files locally
 scp grafana-config.yaml administrator@10.122.28.111:/home/administrator/skumark5/grafana-cxtm-poc/
+scp prometheus-deployment.yaml administrator@10.122.28.111:/home/administrator/skumark5/grafana-cxtm-poc/
 kubectl apply -f grafana-config.yaml
+kubectl apply -f prometheus-deployment.yaml
 kubectl rollout restart deployment/grafana -n ao
+kubectl rollout restart deployment/prometheus -n ao
 ```
 
 ---
 
 ## 🔍 Quick Health Checks
 
-### **Direct Access Test:**
+### **Grafana Health Tests:**
 ```bash
+# Direct access test
 curl -I http://10.122.28.111:30300
 # Expected: HTTP/1.1 302 Found
-```
 
-### **Kubernetes Service Test:**
-```bash
+# Service test
 kubectl get svc grafana -n ao
 # Expected: Shows NodePort 30300
-```
 
-### **Pod Health Test:**
-```bash
+# Pod health test
 kubectl get pods -n ao | grep grafana
 # Expected: 1/1 Running
 ```
 
----
-# Grafana Access Methods - CXTM AO Environment
+### **Prometheus Health Tests:**
+```bash
+# Direct access test
+curl -I http://10.122.28.111:30090
+# Expected: HTTP/1.1 200 OK
 
-This guide covers two methods to access Grafana deployed in the `ao` namespace on the CXTM Kubernetes cluster.
+# Service test
+kubectl get svc prometheus -n ao
+# Expected: Shows NodePort 30090
+
+# Pod health test
+kubectl get pods -n ao | grep prometheus
+# Expected: 1/1 Running
+
+# Metrics endpoint test
+curl http://10.122.28.111:30090/metrics | head -5
+# Expected: Prometheus metrics output
+```
+
+### **Complete Stack Test:**
+```bash
+kubectl get all -n ao
+# Expected: Both grafana and prometheus resources running
+```
+
+---
+
+## 📊 Dashboard Management
+
+### **Available Prebuilt Dashboards:**
+```bash
+ls dashboards/
+# Available dashboards:
+#   - kubernetes-cluster-monitoring.json    (Kubernetes cluster overview)
+#   - kubernetes-pods.json                  (Kubernetes pods monitoring)
+#   - kubernetes-deployment.json            (Kubernetes deployments)  
+#   - node-exporter.json                    (Node Exporter metrics)
+#   - blackbox-exporter.json                (Blackbox Exporter monitoring)
+#   - loki-dashboard.json                   (Loki logs dashboard)
+#   - prometheus-stats.json                 (Prometheus statistics)
+```
+
+### **Import Dashboards:**
+1. **Access Grafana:** `http://10.122.28.111:30300/`
+2. **Login:** admin/admin123
+3. **Navigate:** Dashboards → Import
+4. **Upload:** Select JSON file from `dashboards/` folder
+5. **Configure:** Select "Prometheus" as data source
+6. **Import:** Click Import button
+
+### **Verify Data Source:**
+```bash
+# Check if Prometheus data source is configured in Grafana
+curl -u admin:admin123 http://10.122.28.111:30300/api/datasources
+# Expected: Shows Prometheus data source with URL http://prometheus:9090
+```
+
+### **Dashboard Import via API:**
+```bash
+# Example: Import Kubernetes cluster dashboard
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -u admin:admin123 \
+  -d @dashboards/kubernetes-cluster-monitoring.json \
+  http://10.122.28.111:30300/api/dashboards/db
+```
+
+---
+
+# Monitoring Stack Access Methods - CXTM AO Environment
+
+This guide covers two methods to access the complete monitoring stack (Grafana + Prometheus) deployed in the `ao` namespace on the CXTM Kubernetes cluster.
 
 ## 📋 Quick Summary
 
-| Method | URL | Complexity | Stability | Use Case |
-|--------|-----|------------|-----------|----------|
-| **Direct NodePort** | `http://10.122.28.111:30300` | Simple | High | Recommended for stable network access |
-| **SSH Tunneling** | `http://localhost:3000` | Complex | Medium | Required for restricted networks |
+| Service | Direct NodePort | SSH Tunneling | Complexity | Use Case |
+|---------|----------------|---------------|------------|----------|
+| **Grafana** | `http://10.122.28.111:30300` | `http://localhost:3000` | Simple/Complex | Dashboard visualization |
+| **Prometheus** | `http://10.122.28.111:30090` | `http://localhost:9090` | Simple/Complex | Metrics and monitoring |
+
+### **Access Method Comparison:**
+| Method | Complexity | Stability | Use Case |
+|--------|------------|-----------|----------|
+| **Direct NodePort** | Simple | High | Recommended for stable network access |
+| **SSH Tunneling** | Complex | Medium | Required for restricted networks |
 
 ---
 
