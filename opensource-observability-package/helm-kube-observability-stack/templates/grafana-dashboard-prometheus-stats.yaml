@@ -1,0 +1,180 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-prometheus-stats
+  namespace: {{ .Values.environment.namespace | default .Values.namespace }}
+  labels:
+    app: grafana
+    component: visualization
+    grafana_dashboard: "1"
+data:
+  prometheus-stats-simple.json: |-
+    {
+      "dashboard": {
+        "id": null,
+        "title": "Prometheus Overview",
+        "tags": ["prometheus", "monitoring"],
+        "style": "dark",
+        "timezone": "browser", 
+        "refresh": "30s",
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "panels": [
+          {
+            "id": 1,
+            "title": "Prometheus Status",
+            "type": "stat",
+            "targets": [{
+              "expr": "up{job=\"prometheus\"}",
+              "legendFormat": "Status"
+            }],
+            "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "thresholds"},
+                "thresholds": {
+                  "steps": [
+                    {"color": "red", "value": null},
+                    {"color": "green", "value": 1}
+                  ]
+                },
+                "mappings": [
+                  {"options": {"0": {"text": "Down"}}, "type": "value"},
+                  {"options": {"1": {"text": "Up"}}, "type": "value"}
+                ]
+              }
+            }
+          },
+          {
+            "id": 2,
+            "title": "Total Series",
+            "type": "stat",
+            "targets": [{
+              "expr": "prometheus_tsdb_head_series",
+              "legendFormat": "Series Count"
+            }],
+            "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "thresholds"},
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": null},
+                    {"color": "yellow", "value": 100000},
+                    {"color": "red", "value": 500000}
+                  ]
+                },
+                "unit": "short"
+              }
+            }
+          },
+          {
+            "id": 3,
+            "title": "Ingestion Rate",
+            "type": "stat",
+            "targets": [{
+              "expr": "rate(prometheus_tsdb_head_samples_appended_total[5m])",
+              "legendFormat": "Samples/sec"
+            }],
+            "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "thresholds"},
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": null}
+                  ]
+                },
+                "unit": "short"
+              }
+            }
+          },
+          {
+            "id": 4,
+            "title": "Active Targets",
+            "type": "stat",
+            "targets": [{
+              "expr": "count(up)",
+              "legendFormat": "Targets"
+            }],
+            "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "thresholds"},
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": null}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 5,
+            "title": "Sample Ingestion Rate",
+            "type": "timeseries",
+            "targets": [{
+              "expr": "rate(prometheus_tsdb_head_samples_appended_total[5m])",
+              "legendFormat": "Ingestion Rate"
+            }],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "palette-classic"},
+                "unit": "short"
+              }
+            }
+          },
+          {
+            "id": 6,
+            "title": "Query Rate",
+            "type": "timeseries",
+            "targets": [{
+              "expr": "rate(prometheus_http_requests_total{handler=\"/api/v1/query\"}[5m])",
+              "legendFormat": "Query Rate"
+            }],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "palette-classic"},
+                "unit": "reqps"
+              }
+            }
+          },
+          {
+            "id": 7,
+            "title": "Failed Scrapes",
+            "type": "timeseries",
+            "targets": [{
+              "expr": "sum(up == 0)",
+              "legendFormat": "Failed Targets"
+            }],
+            "gridPos": {"h": 6, "w": 12, "x": 0, "y": 12},
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "palette-classic", "fixedColor": "red"},
+                "unit": "short"
+              }
+            }
+          },
+          {
+            "id": 8,
+            "title": "Storage Size",
+            "type": "timeseries",
+            "targets": [{
+              "expr": "prometheus_tsdb_size_bytes",
+              "legendFormat": "Storage Size"
+            }],
+            "gridPos": {"h": 6, "w": 12, "x": 12, "y": 12},
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "palette-classic"},
+                "unit": "bytes"
+              }
+            }
+          }
+        ]
+      }
+    }

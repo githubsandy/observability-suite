@@ -1,4 +1,4 @@
-{{- if .Values.tempo.enabled }}
+# Always provision datasources for dashboard functionality  
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -95,4 +95,3 @@ data:
       jsonData:
         implementation: prometheus
     {{- end }}
-{{- end }}

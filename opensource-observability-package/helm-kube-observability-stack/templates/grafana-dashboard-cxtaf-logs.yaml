@@ -1,0 +1,142 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-cxtaf-logs
+  namespace: {{ .Values.environment.namespace | default .Values.namespace }}
+  labels:
+    app: grafana
+    component: visualization
+    grafana_dashboard: "1"
+data:
+  cxtaf-logs-simple.json: |-
+    {
+      "dashboard": {
+        "id": null,
+        "title": "Application Logs Overview",
+        "tags": ["logs", "applications"],
+        "style": "dark",
+        "timezone": "browser",
+        "refresh": "30s",
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "panels": [
+          {
+            "id": 1,
+            "title": "Total Log Lines",
+            "type": "stat",
+            "targets": [{
+              "expr": "sum(count_over_time({job=\"kubernetes-pods\"}[1h]))",
+              "legendFormat": "Total Logs"
+            }],
+            "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "thresholds"},
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": null}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 2,
+            "title": "Error Count",
+            "type": "stat",
+            "targets": [{
+              "expr": "sum(count_over_time({job=\"kubernetes-pods\"} |~ \"ERROR\" [1h]))",
+              "legendFormat": "Errors"
+            }],
+            "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "thresholds"},
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": null},
+                    {"color": "yellow", "value": 10},
+                    {"color": "red", "value": 50}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 3,
+            "title": "Warning Count", 
+            "type": "stat",
+            "targets": [{
+              "expr": "sum(count_over_time({job=\"kubernetes-pods\"} |~ \"WARN\" [1h]))",
+              "legendFormat": "Warnings"
+            }],
+            "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "thresholds"},
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": null},
+                    {"color": "yellow", "value": 20},
+                    {"color": "red", "value": 100}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 4,
+            "title": "Log Rate",
+            "type": "stat",
+            "targets": [{
+              "expr": "sum(rate(count_over_time({job=\"kubernetes-pods\"}[5m])))",
+              "legendFormat": "Logs/sec"
+            }],
+            "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "thresholds"},
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": null}
+                  ]
+                },
+                "unit": "short"
+              }
+            }
+          },
+          {
+            "id": 5,
+            "title": "Log Volume by Namespace",
+            "type": "timeseries",
+            "targets": [{
+              "expr": "sum(count_over_time({job=\"kubernetes-pods\"}[5m])) by (namespace)",
+              "legendFormat": "{{`{{namespace}}`}}"
+            }],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+            "fieldConfig": {
+              "defaults": {
+                "color": {"mode": "palette-classic"},
+                "unit": "short"
+              }
+            }
+          },
+          {
+            "id": 6,
+            "title": "Recent Application Logs",
+            "type": "logs",
+            "targets": [{
+              "expr": "{job=\"kubernetes-pods\"}"
+            }],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+            "options": {
+              "showTime": true,
+              "sortOrder": "Descending",
+              "wrapLogMessage": true
+            }
+          }
+        ]
+      }
+    }
