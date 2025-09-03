@@ -129,7 +129,7 @@ analyze_pods() {
         echo "🎉 All pods are running successfully!"
         echo
         echo "🚀 Ready to start services:"
-        echo "   ./start-observability.sh $NAMESPACE"
+        echo "   ./start-portForwarding-allService.sh $NAMESPACE"
         echo
         echo "🔍 Check service health:"
         echo "   ./check-services.sh $NAMESPACE"
@@ -171,7 +171,7 @@ main() {
     echo "   Uninstall:       helm uninstall $RELEASE_NAME -n $NAMESPACE"
     echo
     echo "🚀 Next Steps:"
-    echo "   1. ./start-observability.sh $NAMESPACE"
+    echo "   1. ./start-portForwarding-allService.sh $NAMESPACE"
     echo "   2. ./check-services.sh $NAMESPACE"  
     echo "   3. Open http://localhost:3000 (admin/admin)"
     echo "==============================================="

@@ -3,7 +3,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mtr-results-pvc
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.environment.namespace | default .Values.namespace }}
   labels:
     app: mtr-analyzer
     component: network-path-analysis

@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: smokeping
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.environment.namespace | default .Values.namespace }}
   labels:
     app: smokeping
     component: network-monitoring

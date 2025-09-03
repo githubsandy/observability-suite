@@ -27,6 +27,28 @@ This repository provides a comprehensive, production-ready observability stack f
 
 ---
 
+## 🆕 Latest Updates (September 2024)
+
+### ✅ Container-Level Metrics Integration
+- **cAdvisor Integration**: Added container resource monitoring via kubelet
+- **Zero-Pod Solution**: No additional containers - uses existing kubelet metrics
+- **Complete Coverage**: CPU, memory, network, and filesystem metrics per container
+- **Resource Insights**: Container limits, requests, and utilization tracking
+
+### ✅ Dynamic Namespace Resolution  
+- **Infrastructure Portability**: All 55+ templates support dynamic namespaces
+- **Environment Consistency**: Single namespace deployment across all components
+- **Template Logic**: `{{ .Values.environment.namespace | default .Values.namespace }}`
+- **Multi-Environment**: Different namespaces per deployment (CALO lab: `ao`, others: customizable)
+
+### ✅ Enhanced Configuration Management
+- **Backward Compatible**: Maintains fallback for existing deployments  
+- **Cloud Agnostic**: Works across AWS, GCP, Azure, and on-premises
+- **Validated Templates**: All Helm templates tested and syntax-validated
+- **Production Ready**: Complete RBAC and security configurations
+
+---
+
 ## Prerequisites
 
 **Required Tools:**
@@ -65,8 +87,8 @@ chmod +x verify-installation.sh
 ./verify-installation.sh
 
 # 4. Start all enhanced services
-chmod +x start-observability.sh
-./start-observability.sh
+chmod +x start-portForwarding-allService.sh
+./start-portForwarding-allService.sh
 
 # 5. Check comprehensive service health
 chmod +x check-services.sh
@@ -159,7 +181,7 @@ opensource-observability-package/
 ├── 🚀 Enhanced Automation Scripts
 │   ├── install-observability-stack.sh    # Intelligent deployment with environment detection
 │   ├── verify-installation.sh            # Comprehensive installation verification
-│   ├── start-observability.sh            # Enhanced multi-service port forwarding
+│   ├── start-portForwarding-allService.sh            # Enhanced multi-service port forwarding
 │   └── check-services.sh                 # Complete service health monitoring
 ├── 📖 Documentation
 │   └── Document/
@@ -185,7 +207,7 @@ chmod +x *.sh
 ./verify-installation.sh
 
 # 4. Start all services
-./start-observability.sh
+./start-portForwarding-allService.sh
 
 # 5. Check health status
 ./check-services.sh
@@ -236,11 +258,11 @@ The enhanced verification process provides comprehensive checks:
 
 ```bash
 # Start all 15+ observability services with dynamic namespace support
-./start-observability.sh [NAMESPACE]
+./start-portForwarding-allService.sh [NAMESPACE]
 
 # Examples:
-./start-observability.sh         # Uses default 'ao' namespace
-./start-observability.sh monitoring   # Uses 'monitoring' namespace
+./start-portForwarding-allService.sh         # Uses default 'ao' namespace
+./start-portForwarding-allService.sh monitoring   # Uses 'monitoring' namespace
 ```
 
 **Enhanced Features:**
@@ -261,14 +283,15 @@ The enhanced verification process provides comprehensive checks:
 - 📊 Core services (Grafana, Prometheus, Loki)
 - 🔍 Enhanced services (Tempo, AlertManager)
 - 🌐 Network monitoring (Smokeping, MTR, Blackbox)
-- ⚡ Infrastructure exporters (Node, kube-state-metrics)
+- ⚡ Infrastructure exporters (Node, kube-state-metrics, cAdvisor)
+- 📦 Container metrics (per-container resource monitoring)
 - 🗄️ Auto-discovered CXTM database services
 
 ### Service Control
 
 ```bash
 # Stop all port-forwarding services
-# Press Ctrl+C in the start-observability.sh terminal
+# Press Ctrl+C in the start-portForwarding-allService.sh terminal
 
 # Or force kill all port forwards
 pkill -f "kubectl port-forward"
@@ -285,8 +308,11 @@ pkill -f "kubectl port-forward"
 - Advanced log parsing and labeling  
 - Integration with trace correlation
 
-**📈 Metrics (Prometheus + Enhanced Exporters):**
+**📈 Metrics (Prometheus + Enhanced Exporters + cAdvisor):**
 - Comprehensive metrics collection with auto-discovery
+- **Container-Level Metrics**: cAdvisor integration for per-container resource monitoring
+- **System-Level Metrics**: Node-exporter for infrastructure monitoring  
+- **Kubernetes Metrics**: kube-state-metrics for cluster object monitoring
 - 15+ specialized exporters for infrastructure and applications
 - Custom CALO lab metrics for CXTAF/CXTM frameworks
 
@@ -415,6 +441,26 @@ cxtm_database_connections
 # Auto-discovered database metrics
 mysql_up{instance=~"cxtm-mariadb.*"}
 redis_up{instance=~"cxtm-redis.*"}
+```
+
+**Container-Level Metrics (cAdvisor via kubelet):**
+```promql
+# Container CPU usage per pod
+rate(container_cpu_usage_seconds_total{container!="POD"}[5m])
+
+# Container memory usage per pod
+container_memory_usage_bytes{container!="POD"}
+
+# Container filesystem usage per pod
+container_fs_usage_bytes{container!="POD"}
+
+# Container network I/O per pod
+rate(container_network_receive_bytes_total[5m])
+rate(container_network_transmit_bytes_total[5m])
+
+# Container resource limits vs usage
+container_spec_memory_limit_bytes{container!="POD"}
+container_spec_cpu_quota{container!="POD"}
 ```
 
 **Infrastructure Intelligence:**
@@ -793,7 +839,7 @@ helm install observability-stack ./helm-kube-observability-stack \
 ./verify-installation.sh [RELEASE] [NAMESPACE]
 
 # Start all enhanced services  
-./start-observability.sh [NAMESPACE]
+./start-portForwarding-allService.sh [NAMESPACE]
 
 # Complete health monitoring
 ./check-services.sh [NAMESPACE]
@@ -834,7 +880,7 @@ kubectl describe pod -n ao -l app=smokeping
 **🚀 Enhanced Workflow:**
 1. `./install-observability-stack.sh` → **Intelligent deployment**
 2. `./verify-installation.sh` → **Comprehensive validation**  
-3. `./start-observability.sh` → **15+ service activation**
+3. `./start-portForwarding-allService.sh` → **15+ service activation**
 4. `./check-services.sh` → **Complete health monitoring**
 5. **Access Grafana** → http://localhost:3000 (admin/admin)
 

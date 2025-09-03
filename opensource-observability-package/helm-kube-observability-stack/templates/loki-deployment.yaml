@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: loki
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.environment.namespace | default .Values.namespace }}
 spec:
   replicas: {{ .Values.loki.replicas }}
   selector:

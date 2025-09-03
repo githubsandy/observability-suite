@@ -3,7 +3,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-datasources-config
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.environment.namespace | default .Values.namespace }}
   labels:
     app: grafana
     component: visualization

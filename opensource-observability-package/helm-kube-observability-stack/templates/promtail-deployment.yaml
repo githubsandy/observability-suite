@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: promtail
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.environment.namespace | default .Values.namespace }}
 spec:
   replicas: 1
   selector:

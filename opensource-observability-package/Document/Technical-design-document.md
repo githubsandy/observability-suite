@@ -103,7 +103,8 @@ Prometheus Server
 │   ├── Configurable Retention Policies
 │   └── High-Availability Support
 └── Export Integrations
-    ├── Core Exporters (Node, kube-state-metrics)
+    ├── Core Exporters (Node, kube-state-metrics, cAdvisor)
+    ├── Container Metrics (cAdvisor via kubelet)
     ├── Enhanced Blackbox (15+ modules)
     └── Custom CALO Lab Exporters
 ```
@@ -303,6 +304,7 @@ helm-kube-observability-stack/
     ├── infrastructure/            # Infrastructure exporters
     │   ├── node-exporter/
     │   ├── kube-state-metrics/
+    │   ├── cadvisor/              # Container-level metrics
     │   └── promtail/
     └── automation/               # Auto-discovery & configuration
         ├── service-discovery/
@@ -316,7 +318,7 @@ helm-kube-observability-stack/
 # Environment-specific configuration
 environment:
   name: "calo-lab"              # Auto-detected or specified
-  namespace: "ao"               # Target deployment namespace
+  namespace: "ao"               # Dynamic deployment namespace
   
   cluster:
     detection:
@@ -344,6 +346,7 @@ components:
   enhanced:
     tempo: true                 # Distributed tracing
     alertmanager: true          # Production alerting
+    cadvisor: true              # Container-level metrics via kubelet
     # Direct Tempo ingestion - no collector dependencies
     
   network:
@@ -371,6 +374,24 @@ performance:
     infrastructure: "15s"
     network: "60s"
 ```
+
+#### Dynamic Namespace Resolution
+
+**Template Logic for Infrastructure Portability:**
+```yaml
+# All Helm templates use dynamic namespace resolution
+namespace: {{ .Values.environment.namespace | default .Values.namespace }}
+
+# Resolution Priority:
+# 1. environment.namespace (e.g., "ao" for CALO lab)
+# 2. namespace (fallback: "kube-observability-stack")
+```
+
+**Benefits:**
+- **Environment Consistency**: All 55+ components deploy to the same namespace
+- **Multi-Environment Support**: Different namespaces per deployment target
+- **Backward Compatibility**: Maintains fallback for legacy configurations  
+- **Infrastructure Agnostic**: Works across cloud providers and on-premises
 
 ### Data Flow Architecture
 
@@ -464,6 +485,7 @@ Network Targets
 
 | Component | Technology | Rationale |
 |-----------|------------|-----------|
+| **Container Metrics** | cAdvisor via kubelet | Zero-pod container resource monitoring, CPU/memory/network per container, built-in Kubernetes integration |
 | **Network Monitoring** | Smokeping + MTR | Proven network analysis tools, rich visualization, historical data |
 | **Endpoint Testing** | Enhanced Blackbox | Comprehensive testing modules, flexible configuration, Prometheus integration |
 | **Direct Ingestion** | Tempo Multi-Protocol | Simple configuration, no dependencies, cost-free |

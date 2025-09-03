@@ -510,8 +510,8 @@ mtr:
 # Observability stack-specific configurations  
 #*************************************************************
 
-# Legacy namespace support (dynamic namespace resolution)
-namespace: "{{ .Values.environment.namespace | default \"kube-observability-stack\" }}"
+# Legacy namespace support (will use environment.namespace if available, else this default)
+namespace: "kube-observability-stack"
 
 prometheus:
   image: prom/prometheus:v2.45.0

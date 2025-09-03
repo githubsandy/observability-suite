@@ -109,6 +109,10 @@ install_stack() {
     # Prepare values override
     VALUES_OVERRIDE="--set environment.namespace=$NAMESPACE --set environment.name=$ENVIRONMENT"
     
+    # Default enhanced components (always enabled)
+    VALUES_OVERRIDE="$VALUES_OVERRIDE --set components.enhanced.cadvisor=true"
+    VALUES_OVERRIDE="$VALUES_OVERRIDE --set security.rbac.create=true"
+    
     # Environment-specific overrides
     if [ "$ENVIRONMENT" = "calo-lab" ]; then
         VALUES_OVERRIDE="$VALUES_OVERRIDE --set environment.cluster.nodeSelector.enabled=true"
@@ -172,8 +176,8 @@ display_next_steps() {
     echo "   kubectl get pods -n $NAMESPACE -w"
     echo
     echo "2️⃣  Start port forwarding for all services:"
-    echo "   chmod +x start-observability.sh"
-    echo "   ./start-observability.sh $NAMESPACE"
+    echo "   chmod +x start-portForwarding-allService.sh"
+    echo "   ./start-portForwarding-allService.sh $NAMESPACE"
     echo
     echo "3️⃣  Check service health status:"
     echo "   chmod +x check-services.sh"
@@ -187,6 +191,7 @@ display_next_steps() {
     echo
     echo "🎯 What You Get:"
     echo "   ✅ Complete Logs + Metrics + Traces"
+    echo "   ✅ Container-Level Metrics (cAdvisor via kubelet)"
     echo "   ✅ Network Path Analysis (MTR + Smokeping)"
     echo "   ✅ Auto-Discovery of CXTAF/CXTM Services"
     echo "   ✅ Enhanced Blackbox Monitoring"

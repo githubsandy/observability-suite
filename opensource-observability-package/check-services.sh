@@ -49,6 +49,7 @@ echo "⚡ Infrastructure Exporters:"
 check_service "Kube-State-Metrics  " "http://localhost:8081/metrics"
 check_service "Node Exporter       " "http://localhost:9100/metrics"
 check_service "Promtail            " "http://localhost:9080/metrics"
+echo "   📊 cAdvisor Container Metrics: Auto-scraped by Prometheus (via kubelet)"
 
 echo
 echo "🗄️ Database Monitoring (CXTM Services):"
@@ -95,7 +96,7 @@ echo "🛠️ Troubleshooting Commands:"
 echo "   kubectl get pods -n $NAMESPACE"
 echo "   kubectl logs -n $NAMESPACE -l app=grafana"
 echo "   kubectl logs -n $NAMESPACE -l app=prometheus"
-echo "   ./start-observability.sh $NAMESPACE"
+echo "   ./start-portForwarding-allService.sh $NAMESPACE"
 
 echo
 echo "==============================================="

@@ -6,7 +6,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ include "helm-kube-observability-stack.fullname" . }}-grafana
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.environment.namespace | default .Values.namespace }}
   labels:
     {{- include "helm-kube-observability-stack.labels" . | nindent 4 }}
     app.kubernetes.io/component: grafana
@@ -44,7 +44,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ include "helm-kube-observability-stack.fullname" . }}-prometheus
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.environment.namespace | default .Values.namespace }}
   labels:
     {{- include "helm-kube-observability-stack.labels" . | nindent 4 }}
     app.kubernetes.io/component: prometheus
@@ -82,7 +82,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ include "helm-kube-observability-stack.fullname" . }}-loki
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.environment.namespace | default .Values.namespace }}
   labels:
     {{- include "helm-kube-observability-stack.labels" . | nindent 4 }}
     app.kubernetes.io/component: loki
@@ -120,7 +120,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ include "helm-kube-observability-stack.fullname" . }}-blackbox
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Values.environment.namespace | default .Values.namespace }}
   labels:
     {{- include "helm-kube-observability-stack.labels" . | nindent 4 }}
     app.kubernetes.io/component: blackbox-exporter
