@@ -1,77 +1,131 @@
 #!/bin/bash
-echo "🚀 Starting Comprehensive Observability Stack..."
-echo "=============================================="
+
+# Enhanced Observability Stack Port-Forward Script
+# Supports dynamic namespace and all components
+
+# Configuration
+DEFAULT_NAMESPACE="ao"
+NAMESPACE="${1:-$DEFAULT_NAMESPACE}"
+
+echo "🚀 Starting Enhanced Observability Stack..."
+echo "==============================================="
+echo "🌐 Environment: CALO Lab"
+echo "📦 Namespace: $NAMESPACE"
+echo "==============================================="
+echo
+
+# Function to start port-forward with error handling
+start_port_forward() {
+    local service=$1
+    local port=$2
+    local namespace=$3
+    local display_name=$4
+    local pid_var=$5
+    
+    echo "   Starting $display_name on port $port..."
+    kubectl port-forward svc/$service $port:$port -n $namespace >/dev/null 2>&1 &
+    local pid=$!
+    eval "$pid_var=$pid"
+    
+    # Brief check if service started
+    sleep 1
+    if kill -0 $pid 2>/dev/null; then
+        echo "   ✅ $display_name: http://localhost:$port"
+    else
+        echo "   ⚠️  $display_name: Failed to start (service may not exist)"
+    fi
+}
+
+echo "📊 Core Observability Services:"
+start_port_forward "grafana" "3000" "$NAMESPACE" "Grafana Dashboard" "PID_GRAFANA"
+start_port_forward "prometheus" "9090" "$NAMESPACE" "Prometheus Metrics" "PID_PROMETHEUS"
+start_port_forward "loki" "3100" "$NAMESPACE" "Loki Logs" "PID_LOKI"
+
+echo
+echo "🔍 Enhanced Monitoring Services:"
+start_port_forward "tempo" "3200" "$NAMESPACE" "Grafana Tempo (Tracing)" "PID_TEMPO"
+start_port_forward "alertmanager" "9093" "$NAMESPACE" "AlertManager" "PID_ALERTMANAGER"
+# Direct Tempo ingestion - no OTEL collector needed
+
+echo
+echo "🌐 Network Monitoring Services:"
+start_port_forward "smokeping" "80" "$NAMESPACE" "Smokeping (Network Graphs)" "PID_SMOKEPING"
+start_port_forward "mtr-analyzer" "8080" "$NAMESPACE" "MTR Network Analysis" "PID_MTR"
+start_port_forward "blackbox-exporter" "9115" "$NAMESPACE" "Blackbox Exporter" "PID_BLACKBOX"
+
+echo
+echo "⚡ Infrastructure Exporters:"
+start_port_forward "kube-state-metrics" "8081" "$NAMESPACE" "Kube-State-Metrics" "PID_KUBE_STATE"
+start_port_forward "node-exporter-prometheus-node-exporter" "9100" "$NAMESPACE" "Node Exporter" "PID_NODE_EXPORTER"
+start_port_forward "promtail" "9080" "$NAMESPACE" "Promtail" "PID_PROMTAIL"
+
+echo
+echo "🗄️ Database Monitoring (CXTM Services):"
+echo "   📊 MariaDB Metrics: http://cxtm-mariadb.cxtm.svc.cluster.local:9104 (Internal)"
+echo "   📊 Redis Metrics: http://cxtm-redis.cxtm.svc.cluster.local:9121 (Internal)"
+echo "   ℹ️  Database metrics are auto-discovered by Prometheus"
+
+echo
+echo "==============================================="
+echo "🎯 Service Access Summary:"
+echo "==============================================="
 echo
 echo "📊 Core Services:"
-echo "   • Grafana: http://localhost:3000"
-echo "   • Prometheus: http://localhost:9090"
-echo "   • Loki: http://localhost:3100"
+echo "   • Grafana Dashboard:     http://localhost:3000 (admin/admin)"
+echo "   • Prometheus Query:      http://localhost:9090"
+echo "   • Loki Logs:             http://localhost:3100"
 echo
-echo "🔍 Infrastructure Exporters:"
-echo "   • Blackbox Exporter: http://localhost:9115"
-echo "   • Node Exporter: http://localhost:9100"
-echo "   • Promtail: http://localhost:9080"
+echo "🔍 Enhanced Services:"
+echo "   • Grafana Tempo:         http://localhost:3200"
+echo "   • AlertManager:          http://localhost:9093"
+echo "   • Direct Tempo Ingestion:  Multi-protocol trace collection"
 echo
-echo "⚡ Foundation Exporters:"
-echo "   • kube-state-metrics: http://localhost:8080"
-# Commented out - requires actual database configuration:
-# echo "   • MongoDB Exporter: http://localhost:9216"
-# echo "   • PostgreSQL Exporter: http://localhost:9187"
+echo "🌐 Network Monitoring:"
+echo "   • Smokeping Graphs:      http://localhost:80/smokeping/"
+echo "   • MTR Path Analysis:     http://localhost:8080/metrics"
+echo "   • Blackbox Monitoring:   http://localhost:9115/metrics"
 echo
-echo "🚀 Application Layer Exporters:"
-# Commented out - requires external service configuration:
-# echo "   • Jenkins Exporter: http://localhost:9118"
-# echo "   • Redis Exporter: http://localhost:9121"
-# echo "   • FastAPI Metrics: http://localhost:8001"
+echo "⚡ Infrastructure:"
+echo "   • Kubernetes Metrics:    http://localhost:8081/metrics"
+echo "   • Node System Metrics:   http://localhost:9100/metrics"
+echo "   • Log Collection:        http://localhost:9080/metrics"
 echo
-echo "Press Ctrl+C to stop all services"
-echo "=============================================="
+echo "==============================================="
+echo "🔧 Useful Commands:"
+echo "==============================================="
+echo "   Check Services:    ./check-services.sh"
+echo "   View All Pods:     kubectl get pods -n $NAMESPACE"
+echo "   Grafana Logs:      kubectl logs -n $NAMESPACE -l app=grafana"
+echo "   Prometheus Logs:   kubectl logs -n $NAMESPACE -l app=prometheus"
+echo
+echo "💡 Tips:"
+echo "   • All data sources are pre-configured in Grafana"
+echo "   • Traces are sent directly to Tempo (OTLP, Jaeger, Zipkin support)"
+echo "   • CXTAF/CXTM services are auto-discovered"
+echo "   • Check http://localhost:9090/targets for all monitored services"
+echo
+echo "Press Ctrl+C to stop all port-forwarding services"
+echo "==============================================="
 
-# Start Core Services
-echo "Starting core services..."
-kubectl port-forward svc/grafana 3000:3000 -n kube-observability-stack &
-PID1=$!
+# Collect all PIDs for cleanup
+ALL_PIDS="$PID_GRAFANA $PID_PROMETHEUS $PID_LOKI $PID_TEMPO $PID_ALERTMANAGER $PID_SMOKEPING $PID_MTR $PID_BLACKBOX $PID_KUBE_STATE $PID_NODE_EXPORTER $PID_PROMTAIL"
 
-kubectl port-forward svc/prometheus 9090:9090 -n kube-observability-stack &
-PID2=$!
+# Cleanup function
+cleanup() {
+    echo
+    echo "🛑 Stopping all observability services..."
+    for pid in $ALL_PIDS; do
+        if [ ! -z "$pid" ] && kill -0 $pid 2>/dev/null; then
+            kill $pid
+        fi
+    done
+    echo "✅ All services stopped"
+    exit 0
+}
 
-kubectl port-forward svc/loki 3100:3100 -n kube-observability-stack &
-PID3=$!
-
-# Start Infrastructure Exporters
-echo "Starting infrastructure exporters..."
-kubectl port-forward svc/blackbox-exporter 9115:9115 -n kube-observability-stack &
-PID4=$!
-
-kubectl port-forward svc/node-exporter 9100:9100 -n kube-observability-stack &
-PID5=$!
-
-kubectl port-forward svc/promtail 9080:9080 -n kube-observability-stack &
-PID6=$!
-
-# Start Foundation Exporters
-echo "Starting foundation exporters..."
-kubectl port-forward svc/kube-state-metrics 8080:8080 -n kube-observability-stack &
-PID7=$!
-
-# Commented out - requires actual database configuration:
-# kubectl port-forward svc/mongodb-exporter 9216:9216 -n kube-observability-stack &
-# PID8=$!
-# kubectl port-forward svc/postgres-exporter 9187:9187 -n kube-observability-stack &
-# PID9=$!
-
-# Start Application Layer Exporters
-echo "Starting application layer exporters..."
-# Commented out - requires external service configuration:
-# kubectl port-forward svc/jenkins-exporter 9118:9118 -n kube-observability-stack &
-# PID10=$!
-# kubectl port-forward svc/redis-exporter 9121:9121 -n kube-observability-stack &
-# PID11=$!
-# kubectl port-forward svc/fastapi-metrics 8001:8001 -n kube-observability-stack &
-# PID12=$!
-
-echo "✅ Core services started! Use ./check-services.sh to verify status"
+# Set up signal handling
+trap cleanup INT TERM
 
 # Wait for interrupt
-trap "echo 'Stopping all services...'; kill $PID1 $PID2 $PID3 $PID4 $PID5 $PID6 $PID7; exit" INT
+echo "✅ All services started! Waiting for Ctrl+C to stop..."
 wait

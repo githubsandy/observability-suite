@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins-exporter
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: jenkins-exporter
+spec:
+  type: {{ .Values.jenkinsExporter.service.type }}
+  ports:
+  - name: http-metrics
+    port: {{ .Values.jenkinsExporter.service.port }}
+    targetPort: 9118
+    protocol: TCP
+  selector:
+    app: jenkins-exporter

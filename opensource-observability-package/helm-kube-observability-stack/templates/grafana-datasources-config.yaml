@@ -1,0 +1,98 @@
+{{- if .Values.tempo.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: grafana
+    component: visualization
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    
+    datasources:
+    # Prometheus datasource
+    - name: Prometheus
+      type: prometheus
+      access: proxy
+      url: http://prometheus:9090
+      isDefault: true
+      uid: prometheus
+      editable: true
+      jsonData:
+        timeInterval: {{ .Values.performance.scrapeIntervals.default }}
+        queryTimeout: 60s
+        httpMethod: POST
+        exemplarTraceIdDestinations:
+          {{- if .Values.tempo.enabled }}
+          - name: trace_id
+            datasourceUid: tempo
+          {{- end }}
+
+    {{- if .Values.components.core.loki }}
+    # Loki datasource for logs
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki:3100
+      uid: loki
+      editable: true
+      jsonData:
+        maxLines: 1000
+        derivedFields:
+          {{- if .Values.tempo.enabled }}
+          - datasourceUid: tempo
+            matcherRegex: "trace_id=(\\w+)"
+            name: TraceID
+            url: "$${__value.raw}"
+          {{- end }}
+    {{- end }}
+
+    {{- if .Values.tempo.enabled }}
+    # Tempo datasource for traces
+    - name: Tempo
+      type: tempo
+      access: proxy
+      url: http://tempo:{{ .Values.tempo.service.port }}
+      uid: tempo
+      editable: true
+      jsonData:
+        tracesToLogs:
+          datasourceUid: 'loki'
+          tags: ['job', 'instance', 'pod', 'namespace']
+          mappedTags: [{ key: 'service.name', value: 'service' }]
+          mapTagNamesEnabled: false
+          spanStartTimeShift: '1h'
+          spanEndTimeShift: '1h'
+          filterByTraceID: false
+          filterBySpanID: false
+        tracesToMetrics:
+          datasourceUid: 'prometheus'
+          tags: [{ key: 'service.name', value: 'service' }, { key: 'job' }]
+          queries:
+            - name: 'Sample query'
+              query: 'sum(rate(traces_spanmetrics_latency_bucket{$$__tags}[5m]))'
+        serviceMap:
+          datasourceUid: 'prometheus'
+        nodeGraph:
+          enabled: true
+        search:
+          hide: false
+        lokiSearch:
+          datasourceUid: 'loki'
+    {{- end }}
+
+
+    {{- if .Values.alertmanager.enabled }}
+    # AlertManager datasource
+    - name: AlertManager
+      type: alertmanager
+      access: proxy
+      url: http://alertmanager:9093
+      uid: alertmanager  
+      editable: true
+      jsonData:
+        implementation: prometheus
+    {{- end }}
+{{- end }}

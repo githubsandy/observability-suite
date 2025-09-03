@@ -3,6 +3,10 @@ kind: Deployment
 metadata:
   name: grafana
   namespace: {{ .Values.namespace }}
+  labels:
+    app: grafana
+    component: visualization
+    cluster: {{ .Values.environment.name }}
 spec:
   replicas: 1
   selector:
@@ -12,7 +16,24 @@ spec:
     metadata:
       labels:
         app: grafana
+        component: visualization
+        cluster: {{ .Values.environment.name }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
     spec:
+      {{- if .Values.environment.cluster.nodeSelector.enabled }}
+      {{- if eq .Values.environment.cluster.nodeSelector.strategy "labels" }}
+      nodeSelector:
+        {{- toYaml .Values.environment.cluster.nodeSelector.nodeLabels | nindent 8 }}
+      {{- else if eq .Values.environment.cluster.nodeSelector.strategy "hostname" }}
+      {{- if .Values.environment.cluster.nodeSelector.targetNodes }}
+      nodeSelector:
+        kubernetes.io/hostname: {{ index .Values.environment.cluster.nodeSelector.targetNodes 0 }}
+      {{- end }}
+      {{- end }}
+      {{- end }}
       containers:
       - name: grafana
         image: {{ .Values.grafana.image }}
@@ -22,17 +43,62 @@ spec:
         env:
         - name: GF_SECURITY_ADMIN_PASSWORD
           value: {{ .Values.grafana.adminPassword }}
+        - name: GF_INSTALL_PLUGINS
+          value: "grafana-clock-panel,grafana-simple-json-datasource,grafana-piechart-panel"
+        - name: GF_SERVER_ROOT_URL
+          value: "%(protocol)s://%(domain)s:%(http_port)s/"
+        - name: GF_ANALYTICS_REPORTING_ENABLED
+          value: "false"
+        - name: GF_ANALYTICS_CHECK_FOR_UPDATES
+          value: "false"
+        - name: GF_USERS_ALLOW_SIGN_UP
+          value: "false"
+        - name: GF_LOG_LEVEL
+          value: "info"
+        - name: GF_METRICS_ENABLED
+          value: "true"
+        - name: GF_SERVER_DOMAIN
+          value: "grafana.{{ .Values.environment.name }}.local"
+        {{- if .Values.tempo.enabled }}
+        - name: GF_FEATURE_TOGGLES_ENABLE
+          value: "traceqlEditor"
+        {{- end }}
         resources:
           limits:
-            cpu: {{ .Values.grafana.resources.limits.cpu }}
-            memory: {{ .Values.grafana.resources.limits.memory }}
+            cpu: {{ index .Values.resources.templates .Values.resources.sizing "cpu" "limits" | default .Values.grafana.resources.limits.cpu }}
+            memory: {{ index .Values.resources.templates .Values.resources.sizing "memory" "limits" | default .Values.grafana.resources.limits.memory }}
           requests:
-            cpu: {{ .Values.grafana.resources.requests.cpu }}
-            memory: {{ .Values.grafana.resources.requests.memory }}
+            cpu: {{ index .Values.resources.templates .Values.resources.sizing "cpu" "requests" | default .Values.grafana.resources.requests.cpu }}
+            memory: {{ index .Values.resources.templates .Values.resources.sizing "memory" "requests" | default .Values.grafana.resources.requests.memory }}
         volumeMounts:
         - name: grafana-storage
           mountPath: /var/lib/grafana
+        {{- if .Values.tempo.enabled }}
+        - name: grafana-datasources
+          mountPath: /etc/grafana/provisioning/datasources
+        {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
       volumes:
       - name: grafana-storage
+        {{- if .Values.environment.cluster.storage.persistence.enabled }}
         persistentVolumeClaim:
           claimName: grafana-pvc
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      {{- if .Values.tempo.enabled }}
+      - name: grafana-datasources
+        configMap:
+          name: grafana-datasources-config
+      {{- end }}

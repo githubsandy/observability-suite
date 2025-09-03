@@ -1,0 +1,18 @@
+{{- if and .Values.smokeping.enabled .Values.environment.cluster.storage.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: smokeping-data-pvc
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: smokeping
+    component: network-monitoring
+spec:
+  accessModes: {{ .Values.environment.cluster.storage.persistence.accessModes }}
+  {{- if .Values.environment.cluster.storage.storageClass }}
+  storageClassName: {{ .Values.environment.cluster.storage.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: 5Gi  # Default size for smokeping data storage
+{{- end }}

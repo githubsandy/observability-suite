@@ -1,0 +1,19 @@
+{{- if .Values.smokeping.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: smokeping
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: smokeping
+    component: network-monitoring
+spec:
+  selector:
+    app: smokeping
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+    protocol: TCP
+  type: ClusterIP
+{{- end }}

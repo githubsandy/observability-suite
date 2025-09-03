@@ -1,0 +1,216 @@
+{{- if .Values.mtr.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mtr-script
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: mtr-analyzer
+    component: network-path-analysis
+data:
+  mtr-monitor.py: |
+    #!/usr/bin/env python3
+    """
+    MTR Network Path Analyzer
+    Runs MTR tests against configured targets and exposes metrics via Prometheus
+    """
+    
+    import os
+    import time
+    import json
+    import subprocess
+    import threading
+    from datetime import datetime
+    from prometheus_client import start_http_server, Gauge, Counter, Histogram
+    import logging
+    
+    # Configure logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger(__name__)
+    
+    # Environment variables
+    MTR_INTERVAL = int(os.getenv('MTR_INTERVAL', '300'))  # seconds
+    MTR_MAX_HOPS = int(os.getenv('MTR_MAX_HOPS', '30'))
+    MTR_PACKET_SIZE = int(os.getenv('MTR_PACKET_SIZE', '64'))
+    CLUSTER_NAME = os.getenv('CLUSTER_NAME', 'unknown')
+    
+    # Prometheus metrics
+    mtr_hop_count = Gauge('mtr_hop_count', 'Number of hops to reach target', ['target', 'cluster'])
+    mtr_packet_loss = Gauge('mtr_packet_loss_percent', 'Packet loss percentage per hop', ['target', 'hop', 'hop_ip', 'cluster'])
+    mtr_latency_avg = Gauge('mtr_latency_avg_ms', 'Average latency per hop in milliseconds', ['target', 'hop', 'hop_ip', 'cluster'])
+    mtr_latency_best = Gauge('mtr_latency_best_ms', 'Best latency per hop in milliseconds', ['target', 'hop', 'hop_ip', 'cluster'])
+    mtr_latency_worst = Gauge('mtr_latency_worst_ms', 'Worst latency per hop in milliseconds', ['target', 'hop', 'hop_ip', 'cluster'])
+    mtr_tests_total = Counter('mtr_tests_total', 'Total number of MTR tests run', ['target', 'cluster'])
+    mtr_test_duration = Histogram('mtr_test_duration_seconds', 'Time taken to complete MTR test', ['target', 'cluster'])
+    mtr_target_reachable = Gauge('mtr_target_reachable', 'Whether target is reachable (1) or not (0)', ['target', 'cluster'])
+    
+    # Target configurations for CALO lab
+    TARGETS = {
+        # External targets
+        'google_dns': '8.8.8.8',
+        'cloudflare_dns': '1.1.1.1',
+        'google_com': 'www.google.com',
+        'github_com': 'github.com',
+        
+        # CALO lab internal
+        'calo_ingress': '10.122.28.100',
+        'cxtaf_ingress': 'uta-load-balancer.cisco.com',
+        
+        # CXTAF services (internal DNS)
+        'cxtaf_frontend': 'cxtaf-frontend-svc.cxtaf-cxeng.svc.cluster.local',
+        'cxtaf_backend': 'cxtaf-backend-svc.cxtaf-cxeng.svc.cluster.local',
+        'cxtaf_grafana': 'cxtaf-grafana-svc.cxtaf-cxeng.svc.cluster.local',
+        
+        # CXTM services (internal DNS)
+        'cxtm_web': 'cxtm-web.cxtm.svc.cluster.local',
+        'cxtm_mariadb': 'cxtm-mariadb.cxtm.svc.cluster.local',
+        'cxtm_redis': 'cxtm-redis.cxtm.svc.cluster.local',
+        
+        # Infrastructure services
+        'k8s_api': 'kubernetes.default.svc.cluster.local',
+        'coredns': 'rke2-coredns-rke2-coredns.kube-system.svc.cluster.local',
+    }
+    
+    def run_mtr_test(target_name, target_host):
+        """Run MTR test against a target and return parsed results"""
+        try:
+            start_time = time.time()
+            
+            # Run MTR with JSON output
+            cmd = [
+                'mtr',
+                '--report',
+                '--report-cycles', '10',
+                '--json',
+                '--max-ttl', str(MTR_MAX_HOPS),
+                '--psize', str(MTR_PACKET_SIZE),
+                target_host
+            ]
+            
+            logger.info(f"Running MTR test for {target_name} ({target_host})")
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+            duration = time.time() - start_time
+            
+            # Record test completion
+            mtr_tests_total.labels(target=target_name, cluster=CLUSTER_NAME).inc()
+            mtr_test_duration.labels(target=target_name, cluster=CLUSTER_NAME).observe(duration)
+            
+            if result.returncode != 0:
+                logger.error(f"MTR test failed for {target_name}: {result.stderr}")
+                mtr_target_reachable.labels(target=target_name, cluster=CLUSTER_NAME).set(0)
+                return None
+            
+            # Parse JSON output
+            mtr_data = json.loads(result.stdout)
+            
+            if 'report' not in mtr_data:
+                logger.error(f"Invalid MTR output for {target_name}")
+                mtr_target_reachable.labels(target=target_name, cluster=CLUSTER_NAME).set(0)
+                return None
+            
+            hops = mtr_data['report']['hubs']
+            
+            # Update metrics
+            mtr_hop_count.labels(target=target_name, cluster=CLUSTER_NAME).set(len(hops))
+            mtr_target_reachable.labels(target=target_name, cluster=CLUSTER_NAME).set(1)
+            
+            for hop in hops:
+                hop_num = str(hop['count'])
+                hop_ip = hop['host']
+                
+                # Handle cases where hop data might be missing
+                loss_pct = hop.get('Loss%', 0)
+                avg_ms = hop.get('Avg', 0)
+                best_ms = hop.get('Best', 0)
+                worst_ms = hop.get('Wrst', 0)
+                
+                mtr_packet_loss.labels(
+                    target=target_name, 
+                    hop=hop_num, 
+                    hop_ip=hop_ip, 
+                    cluster=CLUSTER_NAME
+                ).set(loss_pct)
+                
+                mtr_latency_avg.labels(
+                    target=target_name, 
+                    hop=hop_num, 
+                    hop_ip=hop_ip, 
+                    cluster=CLUSTER_NAME
+                ).set(avg_ms)
+                
+                mtr_latency_best.labels(
+                    target=target_name, 
+                    hop=hop_num, 
+                    hop_ip=hop_ip, 
+                    cluster=CLUSTER_NAME
+                ).set(best_ms)
+                
+                mtr_latency_worst.labels(
+                    target=target_name, 
+                    hop=hop_num, 
+                    hop_ip=hop_ip, 
+                    cluster=CLUSTER_NAME
+                ).set(worst_ms)
+            
+            logger.info(f"MTR test completed for {target_name} - {len(hops)} hops, {duration:.2f}s")
+            return mtr_data
+            
+        except subprocess.TimeoutExpired:
+            logger.error(f"MTR test timed out for {target_name}")
+            mtr_target_reachable.labels(target=target_name, cluster=CLUSTER_NAME).set(0)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse MTR JSON output for {target_name}: {e}")
+            mtr_target_reachable.labels(target=target_name, cluster=CLUSTER_NAME).set(0)
+        except Exception as e:
+            logger.error(f"Unexpected error during MTR test for {target_name}: {e}")
+            mtr_target_reachable.labels(target=target_name, cluster=CLUSTER_NAME).set(0)
+        
+        return None
+    
+    def monitor_targets():
+        """Continuously monitor all targets"""
+        logger.info(f"Starting MTR monitoring with {MTR_INTERVAL}s interval")
+        logger.info(f"Monitoring {len(TARGETS)} targets: {list(TARGETS.keys())}")
+        
+        while True:
+            try:
+                for target_name, target_host in TARGETS.items():
+                    run_mtr_test(target_name, target_host)
+                    
+                    # Small delay between tests to avoid overwhelming the network
+                    time.sleep(2)
+                
+                logger.info(f"Completed MTR tests for all targets, sleeping for {MTR_INTERVAL}s")
+                time.sleep(MTR_INTERVAL)
+                
+            except KeyboardInterrupt:
+                logger.info("Received interrupt signal, shutting down...")
+                break
+            except Exception as e:
+                logger.error(f"Error in monitoring loop: {e}")
+                time.sleep(60)  # Wait before retrying
+    
+    def main():
+        """Main function"""
+        logger.info(f"Starting MTR Network Path Analyzer for cluster: {CLUSTER_NAME}")
+        logger.info(f"Configuration: interval={MTR_INTERVAL}s, max_hops={MTR_MAX_HOPS}, packet_size={MTR_PACKET_SIZE}")
+        
+        # Start Prometheus metrics server
+        start_http_server(8080)
+        logger.info("Prometheus metrics server started on port 8080")
+        
+        # Start monitoring in a separate thread
+        monitor_thread = threading.Thread(target=monitor_targets, daemon=True)
+        monitor_thread.start()
+        
+        # Keep main thread alive
+        try:
+            while monitor_thread.is_alive():
+                monitor_thread.join(1)
+        except KeyboardInterrupt:
+            logger.info("Shutting down MTR analyzer...")
+    
+    if __name__ == "__main__":
+        main()
+{{- end }}

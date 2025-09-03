@@ -1,0 +1,271 @@
+{{- if .Values.smokeping.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smokeping-config
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: smokeping
+    component: network-monitoring
+data:
+  Targets: |
+    *** Targets ***
+
+    probe = FPing
+
+    menu = Top
+    title = {{ .Values.environment.name }} Network Latency Grapher
+    remark = Smokeping network monitoring for {{ .Values.environment.name }} environment
+
+    + network
+
+    menu = Network Targets
+    title = Network Infrastructure Monitoring
+
+    ++ DNS_Servers
+
+    menu = DNS Servers
+    title = DNS Server Response Times
+
+    {{- range .Values.network.dns.servers }}
+    +++ DNS_{{ . | replace "." "_" }}
+    menu = {{ . }}
+    title = DNS Server {{ . }}
+    host = {{ . }}
+    {{- end }}
+
+    ++ External_Services
+
+    menu = External Services  
+    title = External Service Connectivity
+
+    +++ Google
+    menu = Google
+    title = Google (www.google.com)
+    host = www.google.com
+
+    +++ GitHub
+    menu = GitHub
+    title = GitHub (github.com)
+    host = github.com
+
+    +++ Cloudflare
+    menu = Cloudflare
+    title = Cloudflare DNS
+    host = 1.1.1.1
+
+    ++ CALO_Lab_Internal
+
+    menu = CALO Lab Internal
+    title = Internal CALO Lab Services
+
+    {{- range .Values.monitoringTargets.network.targets }}
+    +++ {{ .name | replace "-" "_" }}
+    menu = {{ .description }}
+    title = {{ .description }} ({{ .host }})
+    host = {{ .host }}
+    {{- end }}
+
+    ++ CXTAF_Services
+
+    menu = CXTAF Services
+    title = CXTAF Framework Services
+
+    +++ CXTAF_Ingress
+    menu = CXTAF Ingress
+    title = CXTAF Load Balancer
+    host = uta-load-balancer.cisco.com
+
+    +++ CXTAF_Frontend  
+    menu = CXTAF Frontend
+    title = CXTAF Frontend Service
+    host = cxtaf-frontend-svc.cxtaf-cxeng.svc.cluster.local
+
+    +++ CXTAF_Backend
+    menu = CXTAF Backend
+    title = CXTAF Backend Service
+    host = cxtaf-backend-svc.cxtaf-cxeng.svc.cluster.local
+
+    +++ CXTAF_Grafana
+    menu = CXTAF Grafana
+    title = CXTAF Grafana Service
+    host = cxtaf-grafana-svc.cxtaf-cxeng.svc.cluster.local
+
+    ++ CXTM_Services
+
+    menu = CXTM Services
+    title = CXTM Framework Services
+
+    +++ CXTM_Web
+    menu = CXTM Web
+    title = CXTM Web Interface
+    host = cxtm-web.cxtm.svc.cluster.local
+
+    +++ CXTM_MariaDB
+    menu = CXTM MariaDB
+    title = CXTM MariaDB Database
+    host = cxtm-mariadb.cxtm.svc.cluster.local
+
+    +++ CXTM_Redis
+    menu = CXTM Redis
+    title = CXTM Redis Cache
+    host = cxtm-redis.cxtm.svc.cluster.local
+
+    +++ CXTM_Scheduler
+    menu = CXTM Scheduler
+    title = CXTM Task Scheduler
+    host = cxtm-scheduler.cxtm.svc.cluster.local
+
+    ++ Infrastructure
+
+    menu = Infrastructure Services
+    title = Kubernetes Infrastructure
+
+    +++ Kubernetes_API
+    menu = K8s API
+    title = Kubernetes API Server  
+    host = kubernetes.default.svc.cluster.local
+
+    +++ CoreDNS
+    menu = CoreDNS
+    title = Kubernetes CoreDNS
+    host = rke2-coredns-rke2-coredns.kube-system.svc.cluster.local
+
+    +++ Ingress_Controller
+    menu = Ingress NGINX
+    title = NGINX Ingress Controller
+    host = ingress-nginx-controller.ingress-nginx.svc.cluster.local
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smokeping-config-dir
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: smokeping
+    component: network-monitoring
+data:
+  config: |
+    *** General ***
+    
+    owner    = {{ .Values.environment.name }} Operations Team
+    contact  = admin@{{ .Values.environment.name }}.local
+    mailhost = localhost
+    # specify this to get syslog logging
+    syslogfacility = local0
+    # each probe is now run in its own process
+    # disable this to revert to the old behavior
+    # concurrentprobes = no
+    
+    @include /config/pathnames
+    
+    *** Alerts ***
+    to = admin@{{ .Values.environment.name }}.local
+    from = smokeping-alert@{{ .Values.environment.name }}.local
+    
+    +someloss
+    type = loss
+    # in percent
+    pattern = >0%,*12*,>0%,*12*,>0%
+    comment = loss 3 times  in a row
+    
+    +rttdetect
+    type = rtt
+    # in milli seconds
+    pattern = <10,<10,<10,<10,<10,<100,>100,>100,>100
+    comment = routing messed up again ?
+    
+    +lossdetect  
+    type = loss
+    # in percent
+    pattern = ==0%,==0%,==0%,==0%,>0%,>0%,>0%
+    comment = suddenly there is packet loss
+    
+    +rttbad
+    type = rtt
+    # in milli seconds  
+    pattern = >200,>200,>200
+    comment = latency is too high
+    
+    *** Database ***
+    
+    step     = {{ .Values.network.smokeping.probeInterval | default "60s" | trimSuffix "s" }}
+    pings    = {{ .Values.network.smokeping.samples | default 20 }}
+    
+    # consfn mrhb steps total
+    
+    AVERAGE  0.5   1  {{ mul 1008 (div 60 (.Values.network.smokeping.probeInterval | default "60s" | trimSuffix "s" | int)) }}
+    AVERAGE  0.5  12  {{ mul 4320 (div 60 (.Values.network.smokeping.probeInterval | default "60s" | trimSuffix "s" | int)) }}
+    AVERAGE  0.5 144  {{ mul 720 (div 60 (.Values.network.smokeping.probeInterval | default "60s" | trimSuffix "s" | int)) }}
+    MAX      0.5   1  {{ mul 1008 (div 60 (.Values.network.smokeping.probeInterval | default "60s" | trimSuffix "s" | int)) }}
+    MAX      0.5  12  {{ mul 4320 (div 60 (.Values.network.smokeping.probeInterval | default "60s" | trimSuffix "s" | int)) }}
+    MAX      0.5 144  {{ mul 720 (div 60 (.Values.network.smokeping.probeInterval | default "60s" | trimSuffix "s" | int)) }}
+    MIN      0.5   1  {{ mul 1008 (div 60 (.Values.network.smokeping.probeInterval | default "60s" | trimSuffix "s" | int)) }}
+    MIN      0.5  12  {{ mul 4320 (div 60 (.Values.network.smokeping.probeInterval | default "60s" | trimSuffix "s" | int)) }}
+    MIN      0.5 144  {{ mul 720 (div 60 (.Values.network.smokeping.probeInterval | default "60s" | trimSuffix "s" | int)) }}
+    
+    *** Presentation ***
+    
+    template = /config/basepage.html
+    
+    + charts
+    
+    menu = Charts
+    title = The most interesting destinations
+    
+    ++ stddev
+    sorter = StdDev(entries=>4)  
+    title = Top 4 destinations with highest standard deviation
+    
+    ++ max
+    sorter = Max(entries=>5)
+    title = Top 5 destinations with highest response time
+    
+    ++ loss
+    sorter = Loss(entries=>5)
+    title = Top 5 destinations with packet loss
+    
+    ++ median
+    sorter = Median(entries=>5)
+    title = Top 5 destinations with highest median response time
+    
+    + overview 
+    
+    width = 600
+    height = 50
+    range = 10h
+    
+    + detail
+    
+    width = 600
+    height = 200
+    unison_tolerance = 2
+    
+    "Last 3 Hours"    3h
+    "Last 30 Hours"   30h  
+    "Last 10 Days"    10d
+    "Last 360 Days"   360d
+    
+    #+ hierarchies
+    #++ owner
+    #title = Host Owner
+    #++ location
+    #title = Location
+    
+    *** Probes ***
+    
+    + FPing
+    
+    binary = /usr/sbin/fping
+    
+    *** Slaves ***
+    secrets=/config/smokeping_secrets
+    +boomer
+    display_name=boomer
+    color=0000ff
+    
+    +slave2
+    display_name=another
+    color=00ff00
+{{- end }}

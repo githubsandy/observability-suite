@@ -1,0 +1,87 @@
+{{- if .Values.smokeping.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smokeping
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: smokeping
+    component: network-monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smokeping
+  template:
+    metadata:
+      labels:
+        app: smokeping
+        component: network-monitoring
+    spec:
+      {{- if .Values.environment.cluster.nodeSelector.enabled }}
+      {{- if eq .Values.environment.cluster.nodeSelector.strategy "labels" }}
+      nodeSelector:
+        {{- toYaml .Values.environment.cluster.nodeSelector.nodeLabels | nindent 8 }}
+      {{- else if eq .Values.environment.cluster.nodeSelector.strategy "hostname" }}
+      {{- if .Values.environment.cluster.nodeSelector.targetNodes }}
+      nodeSelector:
+        kubernetes.io/hostname: {{ index .Values.environment.cluster.nodeSelector.targetNodes 0 }}
+      {{- end }}
+      {{- end }}
+      {{- end }}
+      containers:
+      - name: smokeping
+        image: {{ .Values.smokeping.image }}
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          limits:
+            cpu: {{ .Values.smokeping.resources.limits.cpu }}
+            memory: {{ .Values.smokeping.resources.limits.memory }}
+          requests:
+            cpu: {{ .Values.smokeping.resources.requests.cpu }}
+            memory: {{ .Values.smokeping.resources.requests.memory }}
+        volumeMounts:
+        - name: smokeping-config
+          mountPath: /config/Targets
+          subPath: Targets
+        - name: smokeping-data
+          mountPath: /data
+        - name: smokeping-config-dir
+          mountPath: /config/config
+          subPath: config
+        env:
+        - name: PUID
+          value: "1000"
+        - name: PGID  
+          value: "1000"
+        - name: TZ
+          value: "UTC"
+        livenessProbe:
+          httpGet:
+            path: /smokeping/smokeping.cgi
+            port: 80
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /smokeping/smokeping.cgi
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: smokeping-config
+        configMap:
+          name: smokeping-config
+      - name: smokeping-config-dir
+        configMap:
+          name: smokeping-config-dir
+      - name: smokeping-data
+        {{- if .Values.environment.cluster.storage.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: smokeping-data-pvc
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+{{- end }}

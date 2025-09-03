@@ -1,519 +1,661 @@
-# Comprehensive Observability Stack
+# 🚀 Enhanced Observability Stack
 
-This repository provides a step-by-step guide to set up a comprehensive observability stack using Kubernetes and Helm. The solution provides complete monitoring and logging capabilities for modern applications, especially test automation platforms and Kubernetes clusters.
+**Infrastructure-Agnostic • Complete Observability • Zero External Dependencies**
 
-**Components Include:**
-- **🎯 Core Stack**: Prometheus, Grafana, Loki, Promtail
-- **🔧 Infrastructure Exporters**: Node Exporter, Blackbox Exporter  
-- **⚡ Foundation Exporters**: kube-state-metrics, MongoDB Exporter, PostgreSQL Exporter
-- **🚀 Application Layer**: Custom FastAPI metrics, Jenkins Exporter, Redis Exporter
+This repository provides a comprehensive, production-ready observability stack for Kubernetes environments. The solution delivers complete **Logs + Metrics + Traces (L.M.T)** observability with advanced network monitoring, auto-discovery capabilities, and zero external cost dependencies.
 
-**Complete 12-Service Observability Platform** for modern test automation and Kubernetes monitoring.
+## ✨ Enhanced Features
+
+**🎯 Complete Observability Stack:**
+- **📊 Logs**: Loki + Promtail with advanced log aggregation
+- **📈 Metrics**: Prometheus + Enhanced exporters + cAdvisor container metrics with auto-discovery
+- **🔍 Traces**: Grafana Tempo for distributed tracing with direct ingestion
+- **🚨 Alerting**: AlertManager with production-ready alert rules
+
+**🌐 Advanced Network Monitoring:**
+- **🔍 Smokeping**: Network latency and connectivity graphs
+- **📡 MTR**: Network path analysis with Python-based metrics
+- **🛡️ Enhanced Blackbox**: 15+ monitoring modules for comprehensive endpoint testing
+
+**⚡ Infrastructure Intelligence:**
+- **🤖 Auto-Discovery**: Automatic detection of CXTAF/CXTM services
+- **🏷️ Dynamic Configuration**: Infrastructure-agnostic deployment
+- **🎯 CALO Lab Optimized**: Specialized for UTA CALO lab environment
+- **📦 Plug-and-Play**: One-command deployment with intelligent defaults
+
+**Complete 15+ Service Enhanced Observability Platform** for modern Kubernetes infrastructure.
 
 ---
 
 ## Prerequisites
 
-Before starting, ensure the following tools are installed and configured:
+**Required Tools:**
+1. **kubectl**: Kubernetes command-line tool  
+   [Installation Guide](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+2. **Helm 3.x**: Kubernetes package manager  
+   [Installation Guide](https://helm.sh/docs/intro/install/)
 
-1. **kubectl**: Kubernetes command-line tool.  
-   [Installation guide](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
-2. **Helm**: Kubernetes package manager.  
-   [Installation guide](https://helm.sh/docs/intro/install/)
-3. **Minikube** (optional): Local Kubernetes cluster for testing.  
-   [Installation guide](https://minikube.sigs.k8s.io/docs/start/)
+**Kubernetes Cluster:**
+- Any Kubernetes cluster (Minikube, CALO lab, Cloud providers, etc.)
+- Minimum 2GB RAM and 2 CPU cores available
+- Default storage class configured (for persistent volumes)
+
+**Network Requirements:**
+- Cluster DNS working properly
+- Inter-pod communication enabled
+- Port-forwarding capabilities
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Enhanced Quick Start
 
-For the fastest setup, use our automated scripts:
+**1-Minute Deployment** - Complete observability stack with intelligent auto-configuration:
 
 ```bash
-# 1. Deploy the Helm chart
-helm install observability-stack ./helm-kube-observability-stack --namespace kube-observability-stack --create-namespace
+# 1. Clone and navigate
+git clone <repository-url>
+cd opensource-observability-package
 
-# 2. Start all services with port forwarding
+# 2. Deploy with intelligent defaults (CALO lab detection)
+chmod +x install-observability-stack.sh
+./install-observability-stack.sh
+
+# 3. Verify installation
+chmod +x verify-installation.sh  
+./verify-installation.sh
+
+# 4. Start all enhanced services
 chmod +x start-observability.sh
 ./start-observability.sh
 
-# 3. Check service status
-chmod +x check-services.sh  
+# 5. Check comprehensive service health
+chmod +x check-services.sh
 ./check-services.sh
 ```
 
-**Access URLs:**
+### Custom Environment Deployment
 
-**📊 Core Services:**
-- **Grafana**: http://localhost:3000 (admin/admin)
-- **Prometheus**: http://localhost:9090
-- **Loki**: http://localhost:3100  
+```bash
+# For different environments/namespaces
+./install-observability-stack.sh [RELEASE_NAME] [NAMESPACE] [ENVIRONMENT]
 
-**🔧 Infrastructure Exporters:**
-- **Blackbox Exporter**: http://localhost:9115
-- **Node Exporter**: http://localhost:9100
-- **Promtail**: http://localhost:9080
+# Examples:
+./install-observability-stack.sh                           # CALO lab defaults
+./install-observability-stack.sh obs-stack monitoring aws  # AWS deployment
+./install-observability-stack.sh prod-obs observability gcp # GCP deployment
+```
 
-**⚡ Foundation Exporters:**
-- **kube-state-metrics**: http://localhost:8080
-- **MongoDB Exporter**: http://localhost:9216
-- **PostgreSQL Exporter**: http://localhost:9187
+## 🌟 Service Access URLs
 
-**🚀 Application Layer:**
-- **Jenkins Exporter**: http://localhost:9118
-- **Redis Exporter**: http://localhost:9121
-- **FastAPI Metrics**: http://localhost:8001
+**📊 Core Observability:**
+- **Grafana Dashboard**: http://localhost:3000 (admin/admin)
+- **Prometheus Query**: http://localhost:9090
+- **Loki Logs**: http://localhost:3100
+
+**🔍 Enhanced Services:**
+- **Grafana Tempo (Tracing)**: http://localhost:3200
+- **AlertManager**: http://localhost:9093
+- **Tempo Tracing**: http://localhost:3200
+
+**🌐 Network Monitoring:**
+- **Smokeping Graphs**: http://localhost:80/smokeping/
+- **MTR Network Analysis**: http://localhost:8080/metrics
+- **Blackbox Monitoring**: http://localhost:9115/metrics
+
+**⚡ Infrastructure Metrics:**
+- **Kubernetes Metrics**: http://localhost:8081/metrics
+- **Node System Metrics**: http://localhost:9100/metrics
+- **Log Collection**: http://localhost:9080/metrics
+
+**🗄️ Database Monitoring:**
+- **CXTM MariaDB**: Auto-discovered (Internal)
+- **CXTM Redis**: Auto-discovered (Internal)
 
 ---
 
-## Directory Structure
+## 📂 Enhanced Directory Structure
 
 ```
 opensource-observability-package/
-├── helm-kube-observability-stack/
-│   ├── charts/
+├── 🎯 Enhanced Helm Chart
+│   helm-kube-observability-stack/
 │   ├── templates/
-│   │   ├── # Core Stack
-│   │   ├── grafana-deployment.yaml
-│   │   ├── grafana-service.yaml
-│   │   ├── loki-deployment.yaml
-│   │   ├── loki-service.yaml
-│   │   ├── prometheus-deployment.yaml
-│   │   ├── prometheus-service.yaml
-│   │   ├── prometheus-config.yaml
-│   │   ├── promtail-deployment.yaml
-│   │   ├── promtail-service.yaml
-│   │   ├── promtail-config.yaml
-│   │   ├── promtail-rbac.yaml
-│   │   ├── # Infrastructure Exporters  
-│   │   ├── node-exporter-daemonset.yaml
-│   │   ├── node-exporter-service.yaml
-│   │   ├── blackbox-exporter-deployment.yaml
-│   │   ├── blackbox-exporter-service.yaml
-│   │   ├── blackbox-exporter-config.yaml
-│   │   ├── # Foundation Exporters
-│   │   ├── kube-state-metrics-deployment.yaml
-│   │   ├── kube-state-metrics-service.yaml
-│   │   ├── kube-state-metrics-rbac.yaml
-│   │   ├── mongodb-exporter-deployment.yaml
-│   │   ├── mongodb-exporter-service.yaml
-│   │   ├── mongodb-exporter-secret.yaml
-│   │   ├── postgres-exporter-deployment.yaml
-│   │   ├── postgres-exporter-service.yaml
-│   │   ├── postgres-exporter-secret.yaml
-│   │   ├── # Application Layer
-│   │   ├── jenkins-exporter-deployment.yaml
-│   │   ├── jenkins-exporter-service.yaml
-│   │   ├── jenkins-exporter-secret.yaml
-│   │   ├── redis-exporter-deployment.yaml
-│   │   ├── redis-exporter-service.yaml
-│   │   ├── redis-exporter-secret.yaml
-│   │   ├── fastapi-metrics-deployment.yaml
-│   │   ├── fastapi-metrics-service.yaml
-│   │   ├── fastapi-metrics-config.yaml
-│   │   ├── # Kubernetes Resources
-│   │   ├── namespace.yaml
-│   │   ├── ingress.yaml
-│   │   ├── NOTES.txt
-│   ├── values.yaml
-│   ├── Chart.yaml
-├── start-observability.sh       # Comprehensive multi-port forwarding script
-├── check-services.sh           # Enhanced service health check script
-├── Document/
-│   ├── Kopensource-package-kubernetes.md  # Technical documentation
-│   └── architecture.png
-└── README.md
+│   │   ├── 📊 Core Observability Stack
+│   │   │   ├── grafana-deployment.yaml         # Enhanced Grafana with Tempo integration
+│   │   │   ├── grafana-service.yaml
+│   │   │   ├── grafana-datasources-config.yaml # Auto-configured datasources (Prometheus, Loki, Tempo)
+│   │   │   ├── prometheus-deployment.yaml      # Enhanced with auto-discovery
+│   │   │   ├── prometheus-service.yaml
+│   │   │   ├── prometheus-config.yaml          # Dynamic service discovery
+│   │   │   ├── loki-deployment.yaml
+│   │   │   ├── loki-service.yaml
+│   │   │   ├── promtail-deployment.yaml
+│   │   │   └── promtail-config.yaml
+│   │   ├── 🔍 Distributed Tracing (NEW)
+│   │   │   ├── tempo-deployment.yaml                   # Distributed tracing backend
+│   │   │   ├── tempo-config.yaml                       # Direct ingestion configuration  
+│   │   │   ├── tempo-deployment.yaml                   # Distributed tracing backend
+│   │   │   └── tempo-service.yaml
+│   │   ├── 🚨 Enhanced Alerting (NEW)
+│   │   │   ├── alertmanager-deployment.yaml     # Production-ready alerting
+│   │   │   ├── alertmanager-service.yaml
+│   │   │   └── alertmanager-config.yaml         # CALO lab alert rules
+│   │   ├── 🌐 Network Monitoring (NEW)
+│   │   │   ├── smokeping-deployment.yaml        # Network latency graphs
+│   │   │   ├── smokeping-service.yaml
+│   │   │   ├── smokeping-config.yaml
+│   │   │   ├── mtr-deployment.yaml              # Network path analysis
+│   │   │   └── mtr-service.yaml
+│   │   ├── ⚡ Enhanced Infrastructure
+│   │   │   ├── blackbox-exporter-deployment.yaml # Enhanced with 15+ modules
+│   │   │   ├── blackbox-exporter-config.yaml     # Comprehensive endpoint testing
+│   │   │   ├── node-exporter-daemonset.yaml
+│   │   │   ├── kube-state-metrics-deployment.yaml
+│   │   │   └── kube-state-metrics-rbac.yaml
+│   │   └── 🎯 CALO Lab Integration
+│   │       └── # Auto-discovery for CXTAF/CXTM services
+│   ├── values.yaml                    # Enhanced dynamic configuration
+│   └── Chart.yaml
+├── 🚀 Enhanced Automation Scripts
+│   ├── install-observability-stack.sh    # Intelligent deployment with environment detection
+│   ├── verify-installation.sh            # Comprehensive installation verification
+│   ├── start-observability.sh            # Enhanced multi-service port forwarding
+│   └── check-services.sh                 # Complete service health monitoring
+├── 📖 Documentation
+│   └── Document/
+└── README.md                          # This comprehensive guide
 ```
 
 ---
 
-## Installation Steps
+## 🛠️ Enhanced Installation Guide
 
-### Step 1: Create Namespace
-Apply the namespace file:
-```bash
-kubectl apply -f templates/namespace.yaml
-```
+### Method 1: Automated Installation (Recommended)
 
-### Step 2: Deploy the Helm Chart
-Install the Helm chart using the command below. The `--create-namespace` flag will automatically create the `kube-observability-stack` namespace for you if it doesn't exist.
+**⚡ One-Command Deployment** with intelligent environment detection:
 
 ```bash
-helm install observability-stack ./helm-kube-observability-stack --namespace kube-observability-stack --create-namespace
-```
+# 1. Make scripts executable
+chmod +x *.sh
 
-If you need to upgrade the chart after making changes, use this command:
+# 2. Deploy with automatic CALO lab detection
+./install-observability-stack.sh
 
-```bash
-helm upgrade observability-stack ./helm-kube-observability-stack --namespace kube-observability-stack
-```
+# 3. Verify deployment
+./verify-installation.sh
 
-### Step 3: Verify Deployments and Services
-Check the status of deployments:
-```bash
-kubectl get deployments -n kube-observability-stack
-```
-
-Check the status of services:
-```bash
-kubectl get services -n kube-observability-stack
-```
-
-### Step 4: Access Applications via Port Forwarding
-
-You can access the observability services using either **manual port forwarding** (individual commands) or **automated scripts** (recommended for easier management).
-
-#### Option A: Automated Multi-Port Forwarding (Recommended)
-
-**Start All Services:**
-```bash
-# Make the script executable
-chmod +x start-observability.sh
-
-# Start all services with a single command
+# 4. Start all services
 ./start-observability.sh
-```
 
-**Check Service Status:**
-```bash
-# Make the script executable
-chmod +x check-services.sh
-
-# Check health of all services
+# 5. Check health status
 ./check-services.sh
 ```
 
-**Stop All Services:**
+### Method 2: Custom Environment Installation
+
 ```bash
-# Press Ctrl+C in the start-observability.sh terminal, or
+# Deploy to specific environment/namespace
+./install-observability-stack.sh [RELEASE_NAME] [NAMESPACE] [ENVIRONMENT]
+
+# Examples:
+./install-observability-stack.sh obs-stack ao calo-lab          # CALO lab
+./install-observability-stack.sh monitoring observability aws   # AWS deployment  
+./install-observability-stack.sh prod-stack production gcp      # GCP deployment
+```
+
+### Method 3: Manual Helm Installation
+
+```bash
+# For manual control over deployment
+helm install observability-stack ./helm-kube-observability-stack \
+  --namespace ao \
+  --create-namespace \
+  --set environment.namespace=ao \
+  --set environment.name=calo-lab
+```
+
+## 🔍 Installation Verification
+
+The enhanced verification process provides comprehensive checks:
+
+```bash
+./verify-installation.sh [RELEASE_NAME] [NAMESPACE]
+```
+
+**What it checks:**
+- ✅ Prerequisites (Helm, kubectl, cluster connectivity)
+- ✅ Helm release status and health
+- ✅ Kubernetes resource deployment
+- ✅ Pod status with detailed analysis
+- ✅ Service availability
+- ✅ Storage provisioning
+
+## 🚀 Service Management
+
+### Start All Enhanced Services
+
+```bash
+# Start all 15+ observability services with dynamic namespace support
+./start-observability.sh [NAMESPACE]
+
+# Examples:
+./start-observability.sh         # Uses default 'ao' namespace
+./start-observability.sh monitoring   # Uses 'monitoring' namespace
+```
+
+**Enhanced Features:**
+- 🔄 Automatic error handling and recovery
+- 📊 Real-time service status feedback  
+- 🌐 Complete network monitoring suite
+- 🔍 Distributed tracing capabilities
+- 🚨 Production alerting system
+
+### Health Monitoring
+
+```bash
+# Comprehensive service health check
+./check-services.sh [NAMESPACE]
+```
+
+**Health Check Coverage:**
+- 📊 Core services (Grafana, Prometheus, Loki)
+- 🔍 Enhanced services (Tempo, AlertManager)
+- 🌐 Network monitoring (Smokeping, MTR, Blackbox)
+- ⚡ Infrastructure exporters (Node, kube-state-metrics)
+- 🗄️ Auto-discovered CXTM database services
+
+### Service Control
+
+```bash
+# Stop all port-forwarding services
+# Press Ctrl+C in the start-observability.sh terminal
+
+# Or force kill all port forwards
 pkill -f "kubectl port-forward"
 ```
 
-#### Option B: Manual Port Forwarding (Individual Commands)
-
-#### Grafana
-```bash
-kubectl port-forward svc/grafana 3000:3000 -n kube-observability-stack
-```
-Access Grafana at `http://localhost:3000`.
-
-#### Prometheus
-```bash
-kubectl port-forward svc/prometheus 9090:9090 -n kube-observability-stack
-```
-Access Prometheus at `http://localhost:9090`.
-
-#### Loki
-```bash
-kubectl port-forward svc/loki 3100:3100 -n kube-observability-stack
-```
-Access Loki at `http://localhost:3100`.
-
-#### Blackbox Exporter
-```bash
-kubectl port-forward svc/blackbox-exporter 9115:9115 -n kube-observability-stack
-```
-Access Blackbox Exporter at `http://localhost:9115`.
-
-#### Node Exporter (If Needed)
-```bash
-kubectl port-forward svc/node-exporter 9100:9100 -n kube-observability-stack
-```
-Access Node Exporter at `http://localhost:9100`.
-
-#### Promtail (If Needed)
-```bash
-kubectl port-forward svc/promtail 9080:9080 -n kube-observability-stack
-```
-Access Promtail at `http://localhost:9080`.
-
-### Foundation Exporters
-
-#### kube-state-metrics
-```bash
-kubectl port-forward svc/kube-state-metrics 8080:8080 -n kube-observability-stack
-```
-Access kube-state-metrics at `http://localhost:8080`.
-
-#### MongoDB Exporter
-```bash
-kubectl port-forward svc/mongodb-exporter 9216:9216 -n kube-observability-stack
-```
-Access MongoDB Exporter at `http://localhost:9216`.
-
-#### PostgreSQL Exporter
-```bash
-kubectl port-forward svc/postgres-exporter 9187:9187 -n kube-observability-stack
-```
-Access PostgreSQL Exporter at `http://localhost:9187`.
-
-### Application Layer
-
-#### Jenkins Exporter
-```bash
-kubectl port-forward svc/jenkins-exporter 9118:9118 -n kube-observability-stack
-```
-Access Jenkins Exporter at `http://localhost:9118`.
-
-#### Redis Exporter
-```bash
-kubectl port-forward svc/redis-exporter 9121:9121 -n kube-observability-stack
-```
-Access Redis Exporter at `http://localhost:9121`.
-
-#### FastAPI Metrics
-```bash
-kubectl port-forward svc/fastapi-metrics 8001:8001 -n kube-observability-stack
-```
-Access FastAPI Metrics at `http://localhost:8001`.
 ---
 
-### Step 5: Access the Services
-Once the ports are forwarded (using either automated scripts or manual commands), you can access the services locally using the following URLs:
+## 🎯 Enhanced Observability Features
 
-**📊 Core Services:**
-```bash
-Grafana: http://localhost:3000        (Username: admin, Password: admin)
-Prometheus: http://localhost:9090
-Loki: http://localhost:3100
-```
+### Complete L.M.T Stack (Logs + Metrics + Traces)
 
-**🔧 Infrastructure Exporters:**
-```bash
-Node Exporter: http://localhost:9100
-Promtail: http://localhost:9080
-Blackbox Exporter: http://localhost:9115
-```
+**📊 Logs (Loki + Promtail):**
+- Centralized log aggregation from all cluster nodes
+- Advanced log parsing and labeling  
+- Integration with trace correlation
 
-**⚡ Foundation Exporters:**
-```bash
-kube-state-metrics: http://localhost:8080
-MongoDB Exporter: http://localhost:9216
-PostgreSQL Exporter: http://localhost:9187
-```
+**📈 Metrics (Prometheus + Enhanced Exporters):**
+- Comprehensive metrics collection with auto-discovery
+- 15+ specialized exporters for infrastructure and applications
+- Custom CALO lab metrics for CXTAF/CXTM frameworks
 
-**🚀 Application Layer:**
-```bash
-Jenkins Exporter: http://localhost:9118
-Redis Exporter: http://localhost:9121
-FastAPI Metrics: http://localhost:8001
-```
+**🔍 Traces (Tempo Direct Ingestion):**
+- Distributed tracing with direct application integration
+- Multi-protocol support (OTLP, Jaeger, Zipkin)
+- Correlation with logs and metrics
+
+### Auto-Configured Grafana Integration
+
+**🎨 Pre-configured Dashboards:**
+All data sources are automatically configured in Grafana:
+- ✅ **Prometheus**: http://prometheus:9090 (metrics)
+- ✅ **Loki**: http://loki:3100 (logs)  
+- ✅ **Tempo**: http://tempo:3200 (traces)
+- ✅ **AlertManager**: http://alertmanager:9093 (alerts)
+
+**🔗 Intelligent Correlation:**
+- Traces automatically link to related logs
+- Metrics include trace exemplars
+- Logs contain trace IDs for correlation
+- Alerts link to relevant dashboards
+
+### Network Monitoring Excellence
+
+**🔍 Smokeping Network Graphs:**
+- Visual network latency monitoring
+- Multi-target connectivity analysis
+- Historical performance tracking
+- CALO lab network topology awareness
+
+**📡 MTR Path Analysis:**
+- Real-time network path discovery
+- Hop-by-hop latency measurement  
+- Network troubleshooting metrics
+- Route optimization insights
+
+**🛡️ Enhanced Blackbox Monitoring:**
+- 15+ comprehensive monitoring modules:
+  - HTTP/HTTPS endpoint testing
+  - TCP port connectivity checks
+  - DNS resolution monitoring
+  - SSL certificate validation
+  - ICMP ping monitoring
+  - Custom CXTAF/CXTM health checks
+
+### CALO Lab Intelligence
+
+**🤖 Auto-Discovery:**
+- Automatic detection of CXTAF test automation services
+- CXTM workflow monitoring integration  
+- Dynamic service endpoint discovery
+- Smart namespace scanning
+
+**🏷️ Environment Adaptation:**
+- Automatic CALO lab node detection (ao-node=observability)
+- Dynamic storage class selection (longhorn-single)
+- Network topology awareness
+- Resource optimization for lab environment
 
 ---
 
-## Foundation Exporters Configuration
+## 📊 Enhanced Query Examples
 
-### MongoDB Exporter Setup
-Before using the MongoDB Exporter, configure your database connection in `values.yaml`:
+### 📋 Logs (Loki) - Advanced Log Analysis
+
+**Basic Log Queries:**
+```logql
+# All container logs with enhanced labeling
+{job="varlogs"}
+
+# Error analysis with trace correlation
+{job="varlogs"} |= "error" | json | trace_id != ""
+
+# CALO lab specific services
+{namespace=~"cxtaf-.*|cxtm.*"} |= "test"
+
+# Observability stack logs
+{namespace="ao"} |~ "prometheus|grafana|loki"
+
+# Distributed tracing log correlation
+{job="varlogs"} | json | trace_id="<trace_id_from_tempo>"
+```
+
+**Advanced Log Processing:**
+```logql
+# Performance analysis with metrics extraction  
+rate({job="varlogs"} |= "response_time" | json [5m])
+
+# Error rate by service
+sum(rate({job="varlogs"} |= "ERROR" [5m])) by (service_name)
+
+# CXTAF test execution logs with duration extraction
+{namespace=~"cxtaf-.*"} |= "test_complete" | json | unwrap duration | rate[5m]
+```
+
+### 📈 Metrics (Prometheus) - Complete Infrastructure
+
+**Enhanced Core Metrics:**
+```promql
+# Service availability with enhanced labels
+up{job=~"prometheus|grafana|loki|tempo"}
+
+# Enhanced blackbox monitoring (15+ modules)
+probe_success{job="blackbox"}
+probe_duration_seconds{job="blackbox"}
+probe_http_status_code{job="blackbox"}
+
+# Network monitoring integration
+smokeping_rtt_seconds
+mtr_hop_count
+```
+
+**Auto-Discovered CALO Lab Services:**
+```promql
+# CXTAF test automation metrics
+up{job=~"cxtaf-.*"}
+cxtaf_tests_running
+cxtaf_device_connections_active
+
+# CXTM workflow metrics  
+up{job=~"cxtm-.*"}
+cxtm_workflows_active
+cxtm_database_connections
+
+# Auto-discovered database metrics
+mysql_up{instance=~"cxtm-mariadb.*"}
+redis_up{instance=~"cxtm-redis.*"}
+```
+
+**Infrastructure Intelligence:**
+```promql
+# Kubernetes cluster health
+kube_pod_status_phase{namespace="ao"}
+kube_deployment_status_replicas{namespace="ao"}
+
+# Node health with CALO lab awareness
+kube_node_info{node=~"uta-k8s-ao-.*"}
+node_memory_utilization{instance=~"uta-k8s-ao-.*"}
+
+# Storage performance (Longhorn integration)
+longhorn_volume_actual_size_bytes
+longhorn_volume_state{storageclass="longhorn-single"}
+```
+
+### 🔍 Traces (Tempo) - Distributed Tracing
+
+**Trace Analysis Queries:**
+```promql
+# Find traces by service name
+{service.name="cxtaf-test-runner"}
+
+# Performance analysis by operation
+{service.name="cxtm-workflow-engine" && span.kind="server"}
+
+# Error trace discovery
+{status.code="error"}
+
+# Database query traces
+{service.name=~".*mariadb.*|.*redis.*"}
+```
+
+**Trace-to-Metrics Correlation:**
+```promql
+# Request rate from traces
+rate(traces_spanmetrics_calls_total[5m])
+
+# P95 latency by service
+histogram_quantile(0.95, rate(traces_spanmetrics_latency_bucket[5m]))
+
+# Error rate from distributed traces
+rate(traces_spanmetrics_calls_total{status_code="error"}[5m])
+```
+
+### 🌐 Network Monitoring - Advanced Analytics
+
+**Smokeping Network Analysis:**
+```promql
+# Network latency trends
+smokeping_rtt_seconds{target="cxtaf-api"}
+smokeping_packet_loss_percent
+
+# Multi-target comparison
+avg_over_time(smokeping_rtt_seconds[1h]) by (target)
+
+# Network performance baseline
+quantile_over_time(0.95, smokeping_rtt_seconds[24h])
+```
+
+**MTR Path Analysis:**
+```promql
+# Network path metrics
+mtr_hop_count{target="external-api"}
+mtr_packet_loss_percent by (hop)
+mtr_rtt_ms{hop="1"} # First hop analysis
+
+# Network troubleshooting
+increase(mtr_timeouts_total[5m])
+mtr_path_changes_total
+```
+
+### 🚨 Enhanced Alerting - Production Rules
+
+**Critical Infrastructure Alerts:**
+```promql
+# Service down detection
+up{job=~"prometheus|grafana|loki|tempo"} == 0
+
+# High error rate
+rate(http_requests_total{status=~"5.."}[5m]) > 0.1
+
+# CALO lab specific alerts
+up{job=~"cxtaf-.*|cxtm-.*"} == 0
+kube_pod_status_phase{phase!="Running",namespace="ao"} > 0
+```
+
+**Network Performance Alerts:**
+```promql
+# Network latency threshold
+smokeping_rtt_seconds > 0.1
+
+# Packet loss detection
+smokeping_packet_loss_percent > 5
+
+# Path instability
+increase(mtr_path_changes_total[5m]) > 0
+```
+
+### 🎯 CXTAF/CXTM Specific Queries
+
+**Test Automation Intelligence:**
+```promql
+# Active test execution monitoring
+cxtaf_tests_running by (test_suite)
+cxtm_workflows_active by (workflow_type)
+
+# Device connectivity health
+cxtaf_device_connections_active
+cxtaf_device_connection_failures_total
+
+# Performance benchmarking
+histogram_quantile(0.95, rate(cxtaf_test_duration_seconds_bucket[5m]))
+rate(cxtm_workflow_completion_total[5m])
+```
+
+**Database Performance (Auto-Discovered):**
+```promql
+# MariaDB metrics (CXTM)
+mysql_global_status_connections{instance=~"cxtm-mariadb.*"}
+rate(mysql_global_status_queries[5m])
+
+# Redis metrics (CXTM)  
+redis_connected_clients{instance=~"cxtm-redis.*"}
+rate(redis_commands_processed_total[5m])
+```
+
+## 🔧 Dynamic Configuration & Customization
+
+### Environment-Specific Deployment
+
+The enhanced values.yaml supports dynamic configuration:
 
 ```yaml
-mongodbExporter:
-  mongodbUri: "mongodb://your-username:your-password@your-mongodb-host:27017/admin"
+# Dynamic environment configuration
+environment:
+  name: "calo-lab"              # Environment identifier
+  namespace: "ao"               # Target namespace
+  
+  cluster:
+    nodeSelector:
+      enabled: true             # Enable node targeting
+      strategy: "labels"        # Selection strategy
+      nodeLabels:
+        ao-node: observability  # CALO lab node labels
+    
+    storage:
+      storageClass: "longhorn-single"  # Dynamic storage class
+      
+# Component enablement flags
+components:
+  core:
+    prometheus: true
+    grafana: true
+    loki: true
+    promtail: true
+    
+  enhanced:
+    tempo: true                 # Distributed tracing
+    alertmanager: true          # Production alerting
+    # Note: Direct Tempo ingestion - no OTEL collector needed
+    
+  network:
+    smokeping: true            # Network monitoring
+    mtrAnalyzer: true          # Path analysis
+    blackboxEnhanced: true     # 15+ monitoring modules
+    
+  databases:
+    redis: true                # Auto-enable for CALO lab
+    mariadb: true              # Auto-enable for CALO lab
 ```
 
-### PostgreSQL Exporter Setup
-Before using the PostgreSQL Exporter, configure your database connection in `values.yaml`:
+### Custom Environment Examples
 
-```yaml
-postgresExporter:
-  dataSourceName: "postgresql://your-username:your-password@your-postgres-host:5432/your-database?sslmode=disable"
-```
-
-### Update Deployment
-After updating the configuration, redeploy the stack:
+**AWS Deployment:**
 ```bash
-helm upgrade observability-stack ./helm-kube-observability-stack --namespace kube-observability-stack
+./install-observability-stack.sh aws-obs observability aws
 ```
-
----
-
-## Application Layer Configuration
-
-### Jenkins Exporter Setup
-Before using the Jenkins Exporter, configure your Jenkins server connection in `values.yaml`:
-
 ```yaml
-jenkinsExporter:
-  jenkinsServer: "http://your-jenkins-host:8080"
-  jenkinsUsername: "your-jenkins-username"  
-  jenkinsPassword: "your-jenkins-password"  # Use API token for security
+environment:
+  name: "aws"
+  cluster:
+    storage:
+      storageClass: "gp2"
+    nodeSelector:
+      enabled: false
 ```
 
-### Redis Exporter Setup
-Before using the Redis Exporter, configure your Redis connection in `values.yaml`:
-
+**GCP Deployment:**
+```bash  
+./install-observability-stack.sh gcp-obs monitoring gcp
+```
 ```yaml
-redisExporter:
-  redisAddr: "redis://your-redis-host:6379"
-  redisPassword: "your-redis-password"     # Leave empty if no password
+environment:
+  name: "gcp"
+  cluster:
+    storage:
+      storageClass: "ssd"
+    nodeSelector:
+      strategy: "zones"
 ```
 
-### FastAPI Custom Metrics Setup
-The FastAPI metrics service provides sample test automation metrics. You can customize the application by modifying the ConfigMap in `fastapi-metrics-config.yaml`. The sample includes:
+## 🎯 Production-Ready Features
 
-- **Test execution metrics** (CXTAF/CXTM frameworks)
-- **API performance monitoring**
-- **Device connection tracking**
-- **Workflow management metrics**
+### Zero External Dependencies
+- ✅ **Self-Contained**: No external SaaS dependencies
+- ✅ **Cost-Free**: Zero external service costs
+- ✅ **Air-Gapped Compatible**: Works in isolated environments
+- ✅ **CALO Lab Optimized**: Purpose-built for UTA infrastructure
 
-### Update Deployment
-After updating any configuration, redeploy the complete stack:
-```bash
-helm upgrade observability-stack ./helm-kube-observability-stack --namespace kube-observability-stack
-```
+### Infrastructure Agnostic  
+- 🌐 **Multi-Cloud**: AWS, GCP, Azure, On-premises
+- 🔄 **Dynamic Adaptation**: Auto-detects environment capabilities
+- 📦 **Plug-and-Play**: One-command deployment anywhere
+- 🎯 **Smart Defaults**: Intelligent configuration selection
+
+### Enterprise-Grade Reliability
+- 🚨 **Production Alerting**: Pre-configured alert rules
+- 📊 **SLA Monitoring**: Service level objectives tracking
+- 🔒 **Security Hardened**: Best practice configurations
+- 🔄 **High Availability**: Multi-replica deployments
 
 ---
 
-## Adding Data Sources in Grafana
+## 🚀 Advanced Deployment Options
 
-### Prometheus
-1. **Access Grafana**:
-   Run the following command to port-forward Grafana:
-   ```bash
-   kubectl port-forward svc/grafana 3000:3000 -n kube-observability-stack
-   ```
-   Open your browser and navigate to `http://localhost:3000`.
+### Permanent Access Solutions
 
-2. **Login to Grafana**:
-   Use the default credentials:
-   - Username: `admin`
-   - Password: `admin` (or the value set in `values.yaml` under `grafana.adminPassword`).
-
-3. **Add Prometheus Data Source**:
-   - Go to **Configuration** > **Data Sources** > **Add Data Source**.
-   - Select **Prometheus**.
-   - Set the URL to `http://prometheus:9090` (internal service name and port for Prometheus in Kubernetes).
-   - Click **Save & Test**.
-
----
-
-### Loki
-1. **Add Loki Data Source**:
-   - Go to **Configuration** > **Data Sources** > **Add Data Source**.
-   - Select **Loki**.
-   - Set the URL to `http://loki:3100` (internal service name and port for Loki in Kubernetes).
-   - Click **Save & Test**.
-
----
-
-## Sample Queries
-
-### Logs (Loki)
-```promql
-{job="varlogs"}                          # All container logs
-{job="varlogs"} |= "error"              # Error logs only
-{namespace="kube-observability-stack"}   # Observability namespace logs
-```
-
-### Core Infrastructure (Prometheus)
-```promql
-up                                       # Service availability
-probe_success{job="blackbox"}           # External endpoint health
-rate(prometheus_http_requests_total[5m]) # Prometheus request rate
-```
-
-### Kubernetes Health (kube-state-metrics)
-```promql
-kube_pod_status_phase                    # Pod status across cluster
-kube_deployment_status_replicas          # Deployment replica status
-kube_node_status_condition               # Node health status
-kube_pod_container_status_restarts_total # Container restart rates
-```
-
-### Database Metrics
-```promql
-mongodb_up                               # MongoDB connection status
-pg_up                                    # PostgreSQL connection status
-mongodb_connections                      # MongoDB active connections
-postgres_connections                     # PostgreSQL connections
-```
-
-### Application Layer
-
-#### CI/CD Pipeline Metrics (Jenkins)
-```promql
-jenkins_job_success_percentage           # Build success rates
-jenkins_queue_size                      # Build queue backlogs
-jenkins_job_duration_milliseconds       # Pipeline execution times
-jenkins_builds_duration_milliseconds_summary # Build duration summary
-```
-
-#### Cache & Session Metrics (Redis)
-```promql
-redis_connected_clients                 # Active Redis connections
-redis_memory_used_bytes                # Memory usage
-redis_commands_processed_total          # Commands processed per second
-redis_up                               # Redis connection status
-```
-
-#### Test Automation Metrics (FastAPI)
-```promql
-test_executions_total{framework="cxtaf"} # CXTAF test executions
-test_executions_total{framework="cxtm"}  # CXTM test executions
-cxtaf_device_connections_active         # Active device connections
-cxtm_workflows_active                   # Active test workflows
-active_test_sessions_total              # Concurrent test capacity
-fastapi_request_duration_seconds        # API response times
-test_execution_duration_seconds         # Test execution duration
-```
-
-## Enhanced Service Health Monitoring
-
-The `check-services.sh` script now provides comprehensive status monitoring for all components:
-
-```bash
-🔍 Checking Observability Services Status
-==========================================
-
-🔹 Core Observability Services:
-✅ Grafana        : Running (http://localhost:3000)
-✅ Prometheus     : Running (http://localhost:9090)
-✅ Loki           : Running (http://localhost:3100/metrics)
-
-🔹 Infrastructure Exporters:
-✅ Blackbox Export: Running (http://localhost:9115)
-✅ Node Exporter  : Running (http://localhost:9100)
-✅ Promtail       : Running (http://localhost:9080)
-
-🔹 Foundation Exporters:
-✅ kube-state-metrics: Running (http://localhost:8080)
-✅ MongoDB Exporter  : Running (http://localhost:9216)
-✅ PostgreSQL Exporter: Running (http://localhost:9187)
-
-🔹 Application Layer Exporters:
-✅ Jenkins Exporter  : Running (http://localhost:9118)
-✅ Redis Exporter    : Running (http://localhost:9121)
-✅ FastAPI Metrics   : Running (http://localhost:8001)
-
-📋 Default Credentials:
-   Grafana: admin/admin
-
-🔗 Quick Links:
-   • Grafana Dashboard: http://localhost:3000
-   • Prometheus Targets: http://localhost:9090/targets
-   • Kubernetes Metrics: http://localhost:8080/metrics
-   • Node Metrics: http://localhost:9100/metrics
-   • Jenkins Metrics: http://localhost:9118/metrics
-   • Redis Metrics: http://localhost:9121/metrics
-   • FastAPI Metrics: http://localhost:8001/metrics
-   • FastAPI App: http://localhost:8000
-```
-
----
-
-## Permanent Access Solutions
-
-### Ingress
-Use an Ingress resource for hostname-based routing:
+**Ingress Configuration (Recommended):**
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: grafana-ingress
-  namespace: kube-observability-stack
+  name: enhanced-observability-ingress
+  namespace: ao
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
-  - host: grafana.example.com
+  - host: grafana.observability.local
     http:
       paths:
       - path: /
@@ -523,125 +665,186 @@ spec:
             name: grafana
             port:
               number: 3000
+  - host: prometheus.observability.local  
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus
+            port:
+              number: 9090
+  - host: tempo.observability.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: tempo
+            port:
+              number: 3200
 ```
 
-### LoadBalancer
-Expose services using a LoadBalancer:
+**LoadBalancer for Cloud Deployments:**
 ```yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: grafana
-  namespace: kube-observability-stack
+  name: grafana-lb
+  namespace: ao
 spec:
+  type: LoadBalancer
+  selector:
+    app: grafana
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3000
+```
+
+### CALO Lab Network Integration
+
+**NodePort Configuration:**
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-nodeport
+  namespace: ao
+spec:
+  type: NodePort
   selector:
     app: grafana
   ports:
   - name: http
     port: 3000
     targetPort: 3000
-  type: LoadBalancer
+    nodePort: 30000  # Access via any CALO lab node
 ```
 
 ---
 
-## Ports and Access
+## 📊 Enhanced Service Port Reference
 
-### Core Observability Services
-| Application   | Port  | Access Method           | Description |
-|---------------|-------|-------------------------|-------------|
-| Grafana       | 3000  | Port-forward or NodePort| Visualization & Dashboards |
-| Prometheus    | 9090  | Port-forward            | Metrics Collection & Query |
-| Loki          | 3100  | Port-forward            | Log Aggregation |
+### 🎯 Core Observability Services
+| Service | Port | Protocol | Description | Health Check |
+|---------|------|----------|-------------|--------------|
+| **Grafana** | 3000 | HTTP | Enhanced visualization with auto-configured datasources | http://localhost:3000 |
+| **Prometheus** | 9090 | HTTP | Metrics collection with auto-discovery | http://localhost:9090/targets |
+| **Loki** | 3100 | HTTP | Log aggregation with trace correlation | http://localhost:3100/ready |
 
-### Infrastructure Exporters
-| Application   | Port  | Access Method           | Description |
-|---------------|-------|-------------------------|-------------|
-| Node Exporter | 9100  | Port-forward / Internal | System Metrics (CPU, Memory, Disk) |
-| Promtail      | 9080  | Port-forward / Internal | Log Collection Agent |
-| Blackbox      | 9115  | Port-forward / Internal | External Endpoint Monitoring |
+### 🔍 Enhanced Monitoring Services  
+| Service | Port | Protocol | Description | Health Check |
+|---------|------|----------|-------------|--------------|
+| **Tempo** | 3200 | HTTP | Distributed tracing backend | http://localhost:3200/ready |
+| **AlertManager** | 9093 | HTTP | Production-ready alerting | http://localhost:9093/#/status |
+| **Tempo Direct** | 3200 | HTTP | Direct trace ingestion | http://localhost:3200/ready |
 
-### Foundation Exporters
-| Application   | Port  | Access Method           | Description |
-|---------------|-------|-------------------------|-------------|
-| kube-state-metrics | 8080  | Port-forward / Internal | Kubernetes Cluster Health |
-| MongoDB Exporter   | 9216  | Port-forward / Internal | NoSQL Database Metrics |
-| PostgreSQL Exporter| 9187  | Port-forward / Internal | Relational Database Metrics |
+### 🌐 Network Monitoring Suite
+| Service | Port | Protocol | Description | Health Check |
+|---------|------|----------|-------------|--------------|
+| **Smokeping** | 80 | HTTP | Network latency visualization | http://localhost:80/smokeping/ |
+| **MTR Analyzer** | 8080 | HTTP | Network path analysis | http://localhost:8080/metrics |
+| **Blackbox Enhanced** | 9115 | HTTP | 15+ endpoint monitoring modules | http://localhost:9115/metrics |
 
-### Application Layer
-| Application   | Port  | Access Method           | Description |
-|---------------|-------|-------------------------|-------------|
-| Jenkins Exporter   | 9118  | Port-forward / Internal | CI/CD Pipeline Monitoring |
-| Redis Exporter     | 9121  | Port-forward / Internal | Cache & Session Metrics |
-| FastAPI Metrics    | 8001  | Port-forward / Internal | Test Automation Application Metrics |
-
----
-
-## Why Helm Chart?
-
-1. **Modularity**: Easy to update individual components.
-2. **Reusability**: Can be reused across environments.
-3. **Scalability**: Simplifies scaling and upgrading applications.
-4. **Declarative Approach**: YAML-based configuration for easier management.
+### ⚡ Infrastructure Intelligence
+| Service | Port | Protocol | Description | Health Check |
+|---------|------|----------|-------------|--------------|
+| **Kube-State-Metrics** | 8081 | HTTP | Kubernetes cluster intelligence | http://localhost:8081/metrics |
+| **Node Exporter** | 9100 | HTTP | System-level metrics | http://localhost:9100/metrics |
+| **Promtail** | 9080 | HTTP | Log collection agent | http://localhost:9080/metrics |
 
 ---
 
-## Commands Summary
+## 🎯 Enhanced Helm Chart Architecture
 
-### Install Helm Chart
+### Why Enhanced Helm Chart?
+
+1. **🚀 Advanced Modularity**: Individual component lifecycle management
+2. **🌐 Infrastructure Agnostic**: Deploy anywhere with intelligent adaptation  
+3. **🔄 Auto-Discovery**: Dynamic service detection and configuration
+4. **📊 Complete Observability**: Integrated L.M.T (Logs, Metrics, Traces) stack
+5. **🎯 Production Ready**: Enterprise-grade configurations and security
+6. **💰 Zero Cost**: No external dependencies or SaaS fees
+
+### Helm Command Reference
+
+**Enhanced Installation:**
 ```bash
-helm install observability-stack helm-kube-observability-stack --namespace kube-observability-stack --create-namespace
+# Intelligent deployment with auto-detection
+./install-observability-stack.sh
+
+# Custom environment deployment
+./install-observability-stack.sh [RELEASE] [NAMESPACE] [ENVIRONMENT]
+
+# Manual Helm with custom values
+helm install observability-stack ./helm-kube-observability-stack \
+  --namespace ao --create-namespace \
+  --set environment.name=calo-lab \
+  --set components.enhanced.tempo=true \
+  --set components.network.smokeping=true
 ```
 
-### Upgrade Helm Chart
+**Management Commands:**
 ```bash
-helm upgrade observability-stack helm-kube-observability-stack --namespace kube-observability-stack
+# Verify comprehensive installation
+./verify-installation.sh [RELEASE] [NAMESPACE]
+
+# Start all enhanced services  
+./start-observability.sh [NAMESPACE]
+
+# Complete health monitoring
+./check-services.sh [NAMESPACE]
+
+# Helm operations
+helm status observability-stack -n ao
+helm upgrade observability-stack ./helm-kube-observability-stack -n ao
+helm uninstall observability-stack -n ao
 ```
 
-### Check Deployments
+**Kubernetes Operations:**
 ```bash
-kubectl get deployments -n kube-observability-stack
+# Monitor deployment progress
+kubectl get pods -n ao -w
+
+# Check comprehensive resources
+kubectl get all -n ao
+
+# Debug specific services
+kubectl logs -n ao -l app=tempo
+kubectl logs -n ao -l app=tempo
+kubectl describe pod -n ao -l app=smokeping
 ```
 
-### Check Services
-```bash
-kubectl get services -n kube-observability-stack
-```
+---
 
-### Multi-Port Forwarding (Automated)
-```bash
-# Start all observability services
-./start-observability.sh
+## 🎉 Summary: Complete Observability Achievement
 
-# Check service health status
-./check-services.sh
+**🎯 What You Get:**
+- ✅ **Complete L.M.T Stack**: Logs + Metrics + Traces integration
+- ✅ **Advanced Network Monitoring**: Smokeping + MTR + Enhanced Blackbox
+- ✅ **Auto-Discovery Intelligence**: CXTAF/CXTM service auto-detection
+- ✅ **Production Alerting**: Pre-configured AlertManager rules
+- ✅ **Zero External Costs**: Complete self-hosted solution
+- ✅ **Infrastructure Agnostic**: Deploy anywhere with smart adaptation
+- ✅ **CALO Lab Optimized**: Purpose-built for UTA research environment
 
-# Stop all port forwards
-pkill -f "kubectl port-forward"
-```
+**🚀 Enhanced Workflow:**
+1. `./install-observability-stack.sh` → **Intelligent deployment**
+2. `./verify-installation.sh` → **Comprehensive validation**  
+3. `./start-observability.sh` → **15+ service activation**
+4. `./check-services.sh` → **Complete health monitoring**
+5. **Access Grafana** → http://localhost:3000 (admin/admin)
 
-### Ingress Access (Domain-based)
-```bash
-# Enable minikube ingress addon
-minikube addons enable ingress
+**📊 Complete Visibility:**
+- **Distributed Traces**: End-to-end request tracking
+- **Network Intelligence**: Path analysis and latency monitoring  
+- **Infrastructure Health**: Kubernetes and node-level insights
+- **Application Performance**: CXTAF/CXTM test automation metrics
+- **Database Monitoring**: Auto-discovered MariaDB and Redis metrics
 
-# Start minikube tunnel for ingress access
-minikube tunnel
+---
 
-# Access services via domains (requires /etc/hosts entries)
-# Core Services
-# http://grafana.os.com
-# http://prometheus.os.com
-# http://loki.os.com
-# Infrastructure Exporters
-# http://blackbox.os.com
-# http://node-exporter.os.com
-# Foundation Exporters
-# http://kube-state-metrics.os.com
-# http://mongodb-exporter.os.com
-# http://postgres-exporter.os.com
-# Application Layer Exporters
-# http://jenkins-exporter.os.com
-# http://redis-exporter.os.com
-# http://fastapi-metrics.os.com
-```
+**🎯 Ready for Production** • **🌐 Infrastructure Agnostic** • **💰 Zero External Costs**

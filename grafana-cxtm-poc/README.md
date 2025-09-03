@@ -4,7 +4,7 @@
 ### **Complete Monitoring Stack:**
 - **Namespace:** `ao`
 - **Node:** `uta-k8s-ao-01`
-- **Components:** Grafana + Prometheus
+- **Components:** Grafana + Prometheus + **Loki (NEW)**
 
 ### **Grafana Configuration:**
 - **Service Type:** `NodePort`
@@ -18,9 +18,18 @@
 - **NodePort:** `30090`
 - **Monitoring:** Kubernetes cluster, pods, services, nodes
 
+### **Loki Configuration (NEW - Log Aggregation):**
+- **Service Type:** `NodePort`
+- **Internal Port:** `3100` (HTTP), `9096` (gRPC)
+- **NodePort:** `30310`
+- **Storage:** 20GB Longhorn PVC (`loki-storage`)
+- **Retention:** 7 days (configurable)
+- **Log Collection:** Promtail DaemonSet (all nodes)
+
 ### **Access URLs:**
 - **Grafana Direct:** `http://10.122.28.111:30300`
 - **Prometheus Direct:** `http://10.122.28.111:30090`
+- **Loki Direct:** `http://10.122.28.111:30310` (API endpoint)
 - **Grafana Tunneled:** `http://localhost:3000`
 
 ### **Login Credentials:**
@@ -34,8 +43,13 @@
 
 ### **Deploy Complete Monitoring Stack:**
 ```bash
-# Deploy both Grafana and Prometheus
+# Deploy Grafana and Prometheus (existing)
 ./deploy-complete-monitoring.sh
+
+# Deploy Loki Log Aggregation (NEW)
+cd ../loki-caloLab-logging-poc
+kubectl apply -f loki-deployment.yaml
+kubectl apply -f promtail-deployment.yaml
 ```
 
 ### **Check Full Stack Status:**
@@ -64,6 +78,28 @@ kubectl logs -n ao deployment/prometheus --tail=20
 # Restart Prometheus
 kubectl rollout restart deployment/prometheus -n ao
 kubectl rollout status deployment/prometheus -n ao
+```
+
+### **Loki Management (NEW):**
+```bash
+# Check Loki status
+kubectl get pods,svc,pvc -n ao | grep loki
+kubectl logs -n ao deployment/loki --tail=20
+
+# Check Promtail DaemonSet
+kubectl get daemonset promtail -n ao
+kubectl logs -n ao daemonset/promtail --tail=20
+
+# Restart Loki
+kubectl rollout restart deployment/loki -n ao
+kubectl rollout status deployment/loki -n ao
+
+# Restart Promtail (log collector)
+kubectl rollout restart daemonset/promtail -n ao
+
+# Test Loki API
+curl http://10.122.28.111:30310/ready
+curl http://10.122.28.111:30310/metrics
 ```
 
 ### **Update Configuration:**
@@ -115,10 +151,33 @@ curl http://10.122.28.111:30090/metrics | head -5
 # Expected: Prometheus metrics output
 ```
 
+### **Loki Health Tests (NEW):**
+```bash
+# Direct access test
+curl -I http://10.122.28.111:30310/ready
+# Expected: HTTP/1.1 200 OK
+
+# Service test
+kubectl get svc loki -n ao
+# Expected: Shows NodePort 30310
+
+# Pod health test  
+kubectl get pods -n ao | grep loki
+# Expected: 1/1 Running
+
+# Storage test
+kubectl get pvc loki-storage -n ao
+# Expected: Bound status, 20Gi size
+
+# Log ingestion test
+curl -G -s "http://10.122.28.111:30310/loki/api/v1/query" --data-urlencode 'query={container_name=~".*"}' | head -5
+# Expected: JSON response with log entries
+```
+
 ### **Complete Stack Test:**
 ```bash
 kubectl get all -n ao
-# Expected: Both grafana and prometheus resources running
+# Expected: grafana, prometheus, loki, and promtail resources running
 ```
 
 ---
@@ -146,11 +205,17 @@ ls dashboards/
 5. **Configure:** Select "Prometheus" as data source
 6. **Import:** Click Import button
 
-### **Verify Data Source:**
+### **Verify Data Sources:**
 ```bash
 # Check if Prometheus data source is configured in Grafana
 curl -u admin:admin123 http://10.122.28.111:30300/api/datasources
 # Expected: Shows Prometheus data source with URL http://prometheus:9090
+
+# Add Loki data source via Grafana UI:
+# 1. Go to Configuration → Data Sources
+# 2. Click "Add data source" → Select "Loki"  
+# 3. Set URL: http://loki:3100
+# 4. Click "Save & Test"
 ```
 
 ### **Dashboard Import via API:**
@@ -165,9 +230,108 @@ curl -X POST \
 
 ---
 
+## 📋 CXTAF Log Monitoring with Loki (NEW)
+
+### **🎯 CXTAF Log Queries (Use in Grafana Explore)**
+
+**1. All CXTAF Application Logs:**
+```logql
+{container_name=~"cxtaf.*"}
+```
+
+**2. CXTAF Error Logs Only:**
+```logql
+{container_name=~"cxtaf.*"} |= "ERROR"
+```
+
+**3. CXTAF Logs by Component:**
+```logql
+{container_name=~"cxtaf.*", cxtaf_component="scheduler"}
+```
+
+**4. Recent Critical Issues (Last 1 hour):**
+```logql
+{container_name=~"cxtaf.*"} |= "ERROR" [1h]
+```
+
+**5. Log Rate by CXTAF Component:**
+```logql
+rate({container_name=~"cxtaf.*"}[5m]) by (cxtaf_component)
+```
+
+### **🔍 CXTM Legacy System Logs:**
+
+**1. All CXTM Application Logs:**
+```logql
+{namespace="cxtm"}
+```
+
+**2. CXTM Migration Service Logs:**
+```logql
+{namespace="cxtm", cxtm_app="migrate"}
+```
+
+**3. CXTM Database Connection Issues:**
+```logql
+{namespace="cxtm"} |= "database" |= "ERROR"
+```
+
+### **🏗️ Infrastructure & Observability Logs:**
+
+**1. Observability Stack Logs:**
+```logql
+{namespace="ao"}
+```
+
+**2. Kubernetes System Logs:**
+```logql
+{job="system-logs"}
+```
+
+**3. All Error Logs Across Environment:**
+```logql
+{container_name=~".*"} |= "ERROR"
+```
+
+### **📈 Log Analytics Queries:**
+
+**1. Error Rate by Application:**
+```logql
+sum by (container_name) (rate({container_name=~".*"} |= "ERROR" [5m]))
+```
+
+**2. Log Volume by Namespace:**
+```logql
+sum by (namespace) (rate({namespace=~".*"}[5m]))
+```
+
+**3. Top 10 Most Active Pods:**
+```logql
+topk(10, sum by (pod_name) (rate({pod_name=~".*"}[5m])))
+```
+
+### **🚨 Alerting Queries (for Setting up Alerts):**
+
+**1. High Error Rate Alert:**
+```logql
+sum by (container_name) (rate({container_name=~"cxtaf.*"} |= "ERROR" [5m])) > 0.1
+```
+
+**2. CXTAF Component Down:**
+```logql
+absent(rate({container_name=~"cxtaf.*"}[5m]))
+```
+
+**3. Database Connection Failures:**
+```logql
+sum(rate({container_name=~"cxtaf.*|cxtm.*"} |= "database" |= "ERROR" [5m])) > 0
+```
+
+---
+
 # Monitoring Stack Access Methods - CXTM AO Environment
 
-This guide covers two methods to access the complete monitoring stack (Grafana + Prometheus) deployed in the `ao` namespace on the CXTM Kubernetes cluster.
+This guide covers access methods for the complete monitoring stack (Grafana + Prometheus + **Loki**) deployed in the `ao` namespace on the CXTM Kubernetes cluster.
 
 ## 📋 Quick Summary
 
@@ -175,6 +339,7 @@ This guide covers two methods to access the complete monitoring stack (Grafana +
 |---------|----------------|---------------|------------|----------|
 | **Grafana** | `http://10.122.28.111:30300` | `http://localhost:3000` | Simple/Complex | Dashboard visualization |
 | **Prometheus** | `http://10.122.28.111:30090` | `http://localhost:9090` | Simple/Complex | Metrics and monitoring |
+| **Loki** | `http://10.122.28.111:30310` | *Via Grafana* | Simple | Log aggregation & search |
 
 ### **Access Method Comparison:**
 | Method | Complexity | Stability | Use Case |
@@ -413,5 +578,5 @@ grafana-datasources:
 
 ---
 
-*Last updated: August 19, 2025*
+*Last updated: September 03, 2025 - Added Loki Log Monitoring Integration*
 *Environment: CXTM AO Namespace (10.122.28.111)*

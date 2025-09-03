@@ -107,10 +107,411 @@ tolerations: []
 affinity: {}
 
 #*************************************************************
-# Observability stack-specific configurations
+# DYNAMIC OBSERVABILITY STACK CONFIGURATION
+# Infrastructure-Agnostic Configuration for Any Environment
 #*************************************************************
 
-namespace: kube-observability-stack
+#*************************************************************
+# ENVIRONMENT CONFIGURATION (Override for different deployments)
+#*************************************************************
+environment:
+  # Environment identifier (calo-lab, aws-prod, gcp-staging, etc.)
+  name: "calo-lab"
+  
+  # Target namespace (dynamic - can be any namespace)  
+  namespace: "ao"  # CALO Lab uses lowercase 'ao'
+  
+  # Infrastructure type (kubernetes, docker, bare-metal)
+  type: "kubernetes"
+  
+  # Cluster configuration
+  cluster:
+    # Node selector strategy (labels, hostname, or none for any node)
+    nodeSelector:
+      enabled: true
+      strategy: "labels"  # Use labels for CALO lab
+      # CALO Lab specific labels
+      nodeLabels:
+        ao-node: observability  # Existing CALO lab node labels
+      # Alternative hostname strategy (for other environments)
+      targetNodes: []
+        # - "uta-k8s-ao-01"
+        # - "uta-k8s-ao-02"
+    
+    # Multi-namespace monitoring capability
+    crossNamespaceMonitoring:
+      enabled: true
+      targetNamespaces:
+        - "ao"                # Observability namespace
+        - "cxtaf-cxeng"      # CXTAF core engine
+        - "cxtaf-cxeng-taa"  # CXTAF TAA
+        - "cxtaf-cxeng-ui"   # CXTAF UI
+        - "cxtm"             # CXTM framework
+        - "default"          # Default namespace
+        - "kube-system"      # Kubernetes system
+        - "ingress-nginx"    # Ingress controller
+        - "longhorn-system"  # Storage system
+        - "metallb-system"   # Load balancer
+      
+    # Storage configuration (CALO lab uses Longhorn)
+    storage:
+      storageClass: "longhorn-single"  # CALO lab default storage class
+      persistence:
+        enabled: true
+        accessModes: ["ReadWriteOnce"]
+
+#*************************************************************
+# COMPONENT ENABLEMENT (Turn components on/off dynamically)
+#*************************************************************
+components:
+  # Core Stack (Always enabled)
+  core:
+    prometheus: true
+    grafana: true 
+    loki: true
+    promtail: true
+  
+  # Enhanced Monitoring (New components)
+  enhanced:
+    # Distributed tracing (direct ingestion, no collector needed)
+    tempo: true
+    
+    # Alert management
+    alertmanager: true
+    
+    # Network monitoring
+    smokeping: true
+    mtr: true  # My Traceroute for path analysis
+    
+    # Synthetic monitoring
+    playwright: true
+    sslMonitoring: true
+    dnsMonitoring: true
+    
+    # Enhanced exporters
+    enhancedBlackbox: true
+    
+    # Container metrics
+    cadvisor: true  # Container resource metrics from kubelet
+  
+  # Database exporters (CALO lab has these)
+  databases:
+    mongodb: false       # Not detected in CALO lab
+    postgresql: false    # Not detected in CALO lab  
+    redis: true         # Available in CXTM namespace
+    mariadb: true       # Available in CXTM namespace
+  
+  # Application exporters (conditional) 
+  applications:
+    jenkins: false      # Not detected in CALO lab
+    fastapi: true       # Custom metrics enabled
+
+#*************************************************************
+# MONITORING TARGETS (Dynamic endpoint configuration)
+#*************************************************************
+monitoringTargets:
+  # External endpoints to monitor
+  external:
+    enabled: true
+    endpoints:
+      - name: "google"
+        url: "https://www.google.com"
+        module: "http_2xx"
+        interval: "30s"
+      - name: "github" 
+        url: "https://www.github.com"
+        module: "http_2xx"
+        interval: "30s"
+      - name: "calo-ingress"
+        url: "http://10.122.28.100"
+        module: "http_2xx"
+        interval: "15s"
+      - name: "cxtaf-frontend"
+        url: "https://uta-load-balancer.cisco.com"
+        module: "http_2xx"
+        interval: "30s"
+  
+  # Internal services (auto-discovery + manual)
+  internal:
+    autoDiscovery: true
+    services:
+      # CXTAF services monitoring
+      - namespace: "cxtaf-cxeng"
+        service: "cxtaf-grafana-svc"
+        port: 80
+      - namespace: "cxtaf-cxeng"
+        service: "cxtaf-frontend-svc"
+        port: 80
+      - namespace: "cxtaf-cxeng"
+        service: "cxtaf-backend-svc"
+        port: 80
+      # CXTM services monitoring  
+      - namespace: "cxtm"
+        service: "cxtm-web"
+        port: 8080
+      - namespace: "cxtm"
+        service: "cxtm-mariadb"
+        port: 9104  # Metrics port
+      - namespace: "cxtm"
+        service: "cxtm-redis"
+        port: 9121  # Metrics port
+  
+  # Network targets for MTR/Smokeping
+  network:
+    enabled: true
+    targets:
+      - name: "dns-google"
+        host: "8.8.8.8"
+        description: "Google DNS"
+      - name: "dns-cloudflare"
+        host: "1.1.1.1" 
+        description: "Cloudflare DNS"
+      - name: "calo-ingress-ip"
+        host: "10.122.28.100"
+        description: "CALO Lab Ingress IP"
+      - name: "cxtm-mariadb"
+        host: "cxtm-mariadb.cxtm.svc.cluster.local"
+        description: "CXTM MariaDB Internal"
+
+#*************************************************************
+# RESOURCE ALLOCATION (Dynamic sizing based on environment)
+#*************************************************************
+resources:
+  # Resource sizing strategy (auto-detected based on environment)
+  sizing: "medium"  # small, medium, large, xlarge, custom
+  
+  # Pre-defined sizing templates for different environments
+  templates:
+    small:    # For development/testing (< 4GB RAM environments)
+      cpu: 
+        requests: "100m"
+        limits: "500m"
+      memory:
+        requests: "128Mi" 
+        limits: "512Mi"
+    
+    medium:   # For CALO lab and similar environments
+      cpu:
+        requests: "250m"
+        limits: "500m"
+      memory:
+        requests: "256Mi"
+        limits: "512Mi"
+    
+    large:    # For production environments
+      cpu:
+        requests: "500m"
+        limits: "1000m"
+      memory:
+        requests: "512Mi"
+        limits: "1Gi"
+    
+    xlarge:   # For high-scale environments
+      cpu:
+        requests: "1000m"
+        limits: "2000m"
+      memory:
+        requests: "1Gi"
+        limits: "2Gi"
+
+#*************************************************************
+# ALERTING CONFIGURATION (Dynamic rules)
+#*************************************************************
+alerting:
+  enabled: true
+  
+  # Alert severity levels
+  severity:
+    critical:
+      thresholds:
+        cpu: 90
+        memory: 90
+        disk: 85
+        response_time: 5000  # milliseconds
+    
+    warning:
+      thresholds:
+        cpu: 75
+        memory: 75
+        disk: 70
+        response_time: 2000
+  
+  # Notification channels (configure as needed for each environment)
+  notifications:
+    slack:
+      enabled: false
+      webhook: ""
+    email:
+      enabled: false
+      smtp: {}
+    webhook:
+      enabled: false
+      url: ""
+
+#*************************************************************
+# SYNTHETIC MONITORING (Dynamic test configuration)
+#*************************************************************
+synthetic:
+  # Web application monitoring
+  web:
+    enabled: true
+    tests:
+      - name: "cxtaf-frontend-health"
+        url: "https://uta-load-balancer.cisco.com"
+        script: "health-check.js"
+        interval: "5m"
+      - name: "cxtm-web-api"
+        url: "http://cxtm-web.cxtm.svc.cluster.local:8080/health"
+        type: "api"
+        interval: "1m"
+  
+  # Custom health checks for CALO lab services
+  healthChecks:
+    enabled: true
+    checks:
+      - name: "cxtaf-grafana"
+        endpoint: "http://cxtaf-grafana-svc.cxtaf-cxeng.svc.cluster.local/api/health"
+        interval: "30s"
+      - name: "cxtm-mariadb"
+        endpoint: "http://cxtm-mariadb.cxtm.svc.cluster.local:3306"
+        interval: "30s"
+
+#*************************************************************
+# NETWORK MONITORING CONFIGURATION
+#*************************************************************
+network:
+  # Smokeping configuration
+  smokeping:
+    enabled: true
+    probeInterval: "60s"
+    samples: 20
+  
+  # MTR configuration  
+  mtr:
+    enabled: true
+    interval: "300s"  # 5 minutes
+    maxHops: 30
+    packetSize: 64
+  
+  # DNS monitoring
+  dns:
+    enabled: true
+    servers:
+      - "8.8.8.8"
+      - "1.1.1.1"
+      - "10.43.0.10"  # CALO lab CoreDNS
+    queries:
+      - "google.com"
+      - "github.com"
+      - "uta-load-balancer.cisco.com"
+      - "cxtm-web.cxtm.svc.cluster.local"
+
+#*************************************************************
+# SECURITY & COMPLIANCE
+#*************************************************************
+security:
+  # SSL/TLS monitoring
+  ssl:
+    enabled: true
+    certificateExpiryDays: 30  # Alert when cert expires within 30 days
+    endpoints:
+      - "https://uta-load-balancer.cisco.com"
+      - "https://www.google.com"
+  
+  # RBAC configuration
+  rbac:
+    create: true
+    serviceAccountName: "observability-stack"
+
+#*************************************************************
+# PERFORMANCE & SCALING
+#*************************************************************
+performance:
+  # Horizontal Pod Autoscaler
+  hpa:
+    enabled: false  # Disabled for CALO lab (sufficient resources)
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPU: 70
+    targetMemory: 80
+  
+  # Data retention policies
+  retention:
+    prometheus: "15d"
+    loki: "7d"  
+    tempo: "7d"
+  
+  # Scrape intervals (adjust for performance)
+  scrapeIntervals:
+    default: "15s"
+    slow: "60s"
+    fast: "5s"
+
+#*************************************************************
+# NEW COMPONENTS CONFIGURATION
+#*************************************************************
+
+# Grafana Tempo configuration
+# Note: Direct trace ingestion without any collector dependencies
+# Configured for zero external dependencies
+tempo:
+  enabled: "{{ .Values.components.enhanced.tempo }}"
+  image: "grafana/tempo:2.4.1"
+  replicas: 1
+  resources:
+    limits:
+      cpu: "{{ .Values.resources.templates[.Values.resources.sizing].cpu.limits }}"
+      memory: "{{ .Values.resources.templates[.Values.resources.sizing].memory.limits }}"
+    requests:
+      cpu: "{{ .Values.resources.templates[.Values.resources.sizing].cpu.requests }}"
+      memory: "{{ .Values.resources.templates[.Values.resources.sizing].memory.requests }}"
+  service:
+    type: ClusterIP
+    port: 3200
+
+# AlertManager configuration
+alertmanager:
+  enabled: "{{ .Values.components.enhanced.alertmanager }}"
+  image: "prom/alertmanager:v0.26.0"
+  replicas: 1
+  resources:
+    limits:
+      cpu: "{{ .Values.resources.templates[.Values.resources.sizing].cpu.limits }}"
+      memory: "{{ .Values.resources.templates[.Values.resources.sizing].memory.limits }}"
+    requests:
+      cpu: "{{ .Values.resources.templates[.Values.resources.sizing].cpu.requests }}"
+      memory: "{{ .Values.resources.templates[.Values.resources.sizing].memory.requests }}"
+
+# Smokeping configuration
+smokeping:
+  enabled: "{{ .Values.components.enhanced.smokeping }}"
+  image: "linuxserver/smokeping:latest"
+  resources:
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+
+# MTR configuration
+mtr:
+  enabled: "{{ .Values.components.enhanced.mtr }}"
+  image: "alpine:latest"
+  resources:
+    limits:
+      cpu: "100m"
+      memory: "128Mi"
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+
+#*************************************************************
+# Observability stack-specific configurations  
+#*************************************************************
+
+# Legacy namespace support (dynamic namespace resolution)
+namespace: "{{ .Values.environment.namespace | default \"kube-observability-stack\" }}"
 
 prometheus:
   image: prom/prometheus:v2.45.0

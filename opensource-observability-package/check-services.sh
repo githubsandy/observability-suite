@@ -1,9 +1,19 @@
 #!/bin/bash
-echo "🔍 Checking Observability Services Status"
-echo "=========================================="
+
+# Enhanced Observability Stack Service Checker
+# Supports dynamic namespace and all enhanced components
+
+# Configuration
+DEFAULT_NAMESPACE="ao"
+NAMESPACE="${1:-$DEFAULT_NAMESPACE}"
+
+echo "🔍 Enhanced Observability Services Health Check"
+echo "==============================================="
+echo "📦 Namespace: $NAMESPACE"
+echo "==============================================="
 echo
 
-# Function to check service
+# Function to check service with enhanced validation
 check_service() {
     local name=$1
     local url=$2
@@ -17,46 +27,75 @@ check_service() {
 }
 
 # Check Core Observability Services
-echo "🔹 Core Observability Services:"
-check_service "Grafana        " "http://localhost:3000"
-check_service "Prometheus     " "http://localhost:9090"
-check_service "Loki           " "http://localhost:3100/metrics"
+echo "📊 Core Observability Services:"
+check_service "Grafana Dashboard    " "http://localhost:3000"
+check_service "Prometheus Metrics   " "http://localhost:9090"
+check_service "Loki Logs           " "http://localhost:3100/metrics"
 
 echo
-echo "🔹 Infrastructure Exporters:"
-check_service "Blackbox Export" "http://localhost:9115"
-check_service "Node Exporter  " "http://localhost:9100"
-check_service "Promtail       " "http://localhost:9080"
+echo "🔍 Enhanced Monitoring Services:"
+check_service "Grafana Tempo       " "http://localhost:3200"
+check_service "AlertManager        " "http://localhost:9093"
+echo "   📊 Direct Tempo Ingestion: Multi-protocol trace collection"
 
 echo
-echo "🔹 Foundation Exporters:"
-check_service "kube-state-metrics" "http://localhost:8080"
-# Commented out - requires actual database configuration:
-# check_service "MongoDB Exporter  " "http://localhost:9216"
-# check_service "PostgreSQL Exporter" "http://localhost:9187"
+echo "🌐 Network Monitoring Services:"
+check_service "Smokeping           " "http://localhost:80/smokeping/"
+check_service "MTR Network Analysis" "http://localhost:8080/metrics"
+check_service "Blackbox Exporter   " "http://localhost:9115/metrics"
 
 echo
-echo "🔹 Application Layer Exporters:"
-# Commented out - requires external service configuration:
-# check_service "Jenkins Exporter  " "http://localhost:9118"
-# check_service "Redis Exporter    " "http://localhost:9121"
-# check_service "FastAPI Metrics   " "http://localhost:8001"
+echo "⚡ Infrastructure Exporters:"
+check_service "Kube-State-Metrics  " "http://localhost:8081/metrics"
+check_service "Node Exporter       " "http://localhost:9100/metrics"
+check_service "Promtail            " "http://localhost:9080/metrics"
 
 echo
-echo "📋 Default Credentials:"
-echo "   Grafana: admin/admin"
+echo "🗄️ Database Monitoring (CXTM Services):"
+echo "   📊 MariaDB Metrics: Auto-discovered by Prometheus (Internal)"
+echo "   📊 Redis Metrics: Auto-discovered by Prometheus (Internal)"
+echo "   ℹ️  Database services are monitored via internal cluster endpoints"
+
 echo
-echo "🔗 Quick Links:"
-echo "   • Grafana Dashboard: http://localhost:3000"
-echo "   • Prometheus Targets: http://localhost:9090/targets"
-echo "   • Prometheus Graph: http://localhost:9090/graph"
-echo "   • Loki Labels: http://localhost:3100/loki/api/v1/labels"
-echo "   • Blackbox Metrics: http://localhost:9115/metrics"
-echo "   • Kubernetes Metrics: http://localhost:8080/metrics"
-echo "   • Node Metrics: http://localhost:9100/metrics"
-echo "   • Promtail Metrics: http://localhost:9080/metrics"
-# Commented out - requires external service configuration:
-# echo "   • Jenkins Metrics: http://localhost:9118/metrics"
-# echo "   • Redis Metrics: http://localhost:9121/metrics"
-# echo "   • FastAPI Metrics: http://localhost:8001/metrics"
-# echo "   • FastAPI App: http://localhost:8000"
+echo "==============================================="
+echo "📋 Access Information:"
+echo "==============================================="
+echo
+echo "📊 Primary Dashboards:"
+echo "   • Grafana Dashboard:     http://localhost:3000 (admin/admin)"
+echo "   • Prometheus Query:      http://localhost:9090"
+echo "   • AlertManager:          http://localhost:9093"
+
+echo
+echo "🔍 Specialized Services:"
+echo "   • Grafana Tempo:         http://localhost:3200"
+echo "   • Smokeping Graphs:      http://localhost:80/smokeping/"
+echo "   • Direct Tempo Tracing:      http://localhost:3200 (OTLP, Jaeger, Zipkin)"
+
+echo
+echo "📈 Metrics Endpoints:"
+echo "   • Prometheus Targets:    http://localhost:9090/targets"
+echo "   • Loki API:              http://localhost:3100/loki/api/v1/labels"
+echo "   • Blackbox Monitoring:   http://localhost:9115/metrics"
+echo "   • Kubernetes Metrics:    http://localhost:8081/metrics"
+echo "   • Node System Metrics:   http://localhost:9100/metrics"
+echo "   • MTR Network Analysis:  http://localhost:8080/metrics"
+
+echo
+echo "🎯 Enhanced Features:"
+echo "   ✅ Complete Logs + Metrics + Traces (L.M.T)"
+echo "   ✅ Network Path Analysis (MTR + Smokeping)"
+echo "   ✅ Auto-Discovery of CXTAF/CXTM Services"
+echo "   ✅ Enhanced Blackbox Monitoring (15+ modules)"
+echo "   ✅ Production-Ready Alerting"
+echo "   ✅ Zero External Dependencies"
+
+echo
+echo "🛠️ Troubleshooting Commands:"
+echo "   kubectl get pods -n $NAMESPACE"
+echo "   kubectl logs -n $NAMESPACE -l app=grafana"
+echo "   kubectl logs -n $NAMESPACE -l app=prometheus"
+echo "   ./start-observability.sh $NAMESPACE"
+
+echo
+echo "==============================================="

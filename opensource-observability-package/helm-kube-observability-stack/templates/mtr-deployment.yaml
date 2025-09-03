@@ -1,0 +1,101 @@
+{{- if .Values.mtr.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mtr-analyzer
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: mtr-analyzer
+    component: network-path-analysis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mtr-analyzer
+  template:
+    metadata:
+      labels:
+        app: mtr-analyzer
+        component: network-path-analysis
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      {{- if .Values.environment.cluster.nodeSelector.enabled }}
+      {{- if eq .Values.environment.cluster.nodeSelector.strategy "labels" }}
+      nodeSelector:
+        {{- toYaml .Values.environment.cluster.nodeSelector.nodeLabels | nindent 8 }}
+      {{- else if eq .Values.environment.cluster.nodeSelector.strategy "hostname" }}
+      {{- if .Values.environment.cluster.nodeSelector.targetNodes }}
+      nodeSelector:
+        kubernetes.io/hostname: {{ index .Values.environment.cluster.nodeSelector.targetNodes 0 }}
+      {{- end }}
+      {{- end }}
+      {{- end }}
+      containers:
+      - name: mtr-analyzer
+        image: {{ .Values.mtr.image }}
+        ports:
+        - containerPort: 8080
+          name: metrics
+        resources:
+          limits:
+            cpu: {{ .Values.mtr.resources.limits.cpu }}
+            memory: {{ .Values.mtr.resources.limits.memory }}
+          requests:
+            cpu: {{ .Values.mtr.resources.requests.cpu }}
+            memory: {{ .Values.mtr.resources.requests.memory }}
+        volumeMounts:
+        - name: mtr-script
+          mountPath: /app
+        - name: mtr-results
+          mountPath: /results
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - |
+          # Install required packages
+          apk add --no-cache mtr curl python3 py3-pip
+          pip3 install prometheus_client
+          
+          # Copy and run the MTR monitoring script
+          cp /app/mtr-monitor.py /usr/local/bin/
+          python3 /usr/local/bin/mtr-monitor.py
+        env:
+        - name: MTR_INTERVAL
+          value: "{{ .Values.network.mtr.interval | default "300s" | trimSuffix "s" }}"
+        - name: MTR_MAX_HOPS
+          value: "{{ .Values.network.mtr.maxHops | default 30 | toString }}"
+        - name: MTR_PACKET_SIZE
+          value: "{{ .Values.network.mtr.packetSize | default 64 | toString }}"
+        - name: CLUSTER_NAME
+          value: {{ .Values.environment.name }}
+        livenessProbe:
+          httpGet:
+            path: /metrics
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /metrics
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        securityContext:
+          capabilities:
+            add: ["NET_RAW", "NET_ADMIN"]
+      volumes:
+      - name: mtr-script
+        configMap:
+          name: mtr-script
+          defaultMode: 0755
+      - name: mtr-results
+        {{- if .Values.environment.cluster.storage.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: mtr-results-pvc
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+{{- end }}
