@@ -1,59 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_LOKI",
-      "label": "Loki",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "loki",
-      "pluginName": "Loki"
-    }
-  ],
-  "__elements": {},
-  "__requires": [
-    {
-      "type": "panel",
-      "id": "stat",
-      "name": "Stat",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "timeseries",
-      "name": "Time series",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "table",
-      "name": "Table",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "logs",
-      "name": "Logs",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "piechart",
-      "name": "Pie chart",
-      "version": ""
-    },
-    {
-      "type": "datasource",
-      "id": "loki",
-      "name": "Loki",
-      "version": "1.0.0"
-    },
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "9.4.3"
-    }
-  ],
   "annotations": {
     "list": [
       {
@@ -73,14 +18,14 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": null,
+  "id": 9,
   "links": [],
   "liveNow": false,
   "panels": [
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
       },
       "fieldConfig": {
         "defaults": {
@@ -130,14 +75,16 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.3",
+      "pluginVersion": "10.1.5",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_LOKI}"
+            "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
           },
-          "expr": "{namespace=\"cxtaf-cxeng\"}",
+          "editorMode": "code",
+          "expr": "count(rate({namespace=\"cxtaf-cxeng\"} [1h]))",
+          "queryType": "range",
           "refId": "A"
         }
       ],
@@ -147,7 +94,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
       },
       "fieldConfig": {
         "defaults": {
@@ -197,14 +144,16 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.3",
+      "pluginVersion": "10.1.5",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_LOKI}"
+            "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
           },
-          "expr": "{namespace=\"cxtm\"}",
+          "editorMode": "code",
+          "expr": "count(rate({namespace=\"cxtm\"} [1h]))",
+          "queryType": "range",
           "refId": "A"
         }
       ],
@@ -214,7 +163,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
       },
       "fieldConfig": {
         "defaults": {
@@ -264,14 +213,16 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.3",
+      "pluginVersion": "10.1.5",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_LOKI}"
+            "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
           },
-          "expr": "{namespace=~\"cxtaf-cxeng|cxtm\"} |= \"ERROR\"",
+          "editorMode": "code",
+          "expr": "count(rate({namespace=~\"cxtaf-cxeng|cxtm\"} [1h]))",
+          "queryType": "range",
           "refId": "A"
         }
       ],
@@ -281,7 +232,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
       },
       "fieldConfig": {
         "defaults": {
@@ -331,14 +282,16 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "9.4.3",
+      "pluginVersion": "10.1.5",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_LOKI}"
+            "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
           },
-          "expr": "{namespace=~\"cxtaf-cxeng|cxtm\"} |~ \"WARN|WARNING\"",
+          "editorMode": "code",
+          "expr": "count(rate({namespace=~\"cxtaf-cxeng|cxtm\"} |~ \"WARN|WARNING\"  [1h]))",
+          "queryType": "range",
           "refId": "A"
         }
       ],
@@ -348,243 +301,12 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 4
-      },
-      "id": 5,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "expr": "{namespace=\"cxtaf-cxeng\"}",
-          "refId": "A",
-          "legendFormat": "CXTAF"
-        },
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "expr": "{namespace=\"cxtm\"}",
-          "refId": "B",
-          "legendFormat": "CXTM"
-        },
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "expr": "{namespace=\"ao\"}",
-          "refId": "C",
-          "legendFormat": "Observability"
-        }
-      ],
-      "title": "Log Volume Over Time",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "loki",
-        "uid": "${DS_LOKI}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Errors"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Warnings"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "yellow",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 4
-      },
-      "id": 6,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "expr": "{namespace=~\"cxtaf-cxeng|cxtm\"} |= \"ERROR\"",
-          "refId": "A",
-          "legendFormat": "Errors"
-        },
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "expr": "{namespace=~\"cxtaf-cxeng|cxtm\"} |~ \"WARN|WARNING\"",
-          "refId": "B",
-          "legendFormat": "Warnings"
-        }
-      ],
-      "title": "Error & Warning Trends",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
       },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "displayMode": "auto",
-            "inspect": false
           },
           "mappings": [],
           "thresholds": {
@@ -603,40 +325,49 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 12
+        "y": 4
       },
       "id": 7,
       "options": {
-        "showHeader": true
+        "displayMode": "gradient",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
       },
-      "pluginVersion": "9.4.3",
+      "pluginVersion": "10.1.5",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_LOKI}"
+            "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
           },
-          "expr": "{namespace=\"cxtaf-cxeng\"}",
+          "editorMode": "builder",
+          "expr": "count_over_time({namespace=\"cxtaf-cxeng\"} [10m])",
+          "queryType": "range",
           "refId": "A"
         }
       ],
       "title": "CXTAF Container Activity",
-      "type": "table"
+      "type": "bargauge"
     },
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
       },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "displayMode": "auto",
-            "inspect": false
           },
           "mappings": [],
           "thresholds": {
@@ -655,40 +386,49 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 12
+        "y": 4
       },
-      "id": 8,
+      "id": 9,
       "options": {
-        "showHeader": true
+        "displayMode": "gradient",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
       },
-      "pluginVersion": "9.4.3",
+      "pluginVersion": "10.1.5",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_LOKI}"
+            "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
           },
-          "expr": "{namespace=\"cxtm\"}",
+          "editorMode": "code",
+          "expr": "sum by (container_name) (rate({namespace=\"cxtaf-cxeng\"} |= \"ERROR\" [5m]))",
+          "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "CXTM Container Activity",
-      "type": "table"
+      "title": "Error Rate by Container",
+      "type": "bargauge"
     },
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
       },
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "displayMode": "auto",
-            "inspect": false
           },
           "mappings": [],
           "thresholds": {
@@ -707,30 +447,44 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 12
+        "y": 4
       },
-      "id": 9,
+      "id": 8,
       "options": {
-        "showHeader": true
+        "displayMode": "gradient",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
       },
-      "pluginVersion": "9.4.3",
+      "pluginVersion": "10.1.5",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_LOKI}"
+            "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
           },
-          "expr": "{namespace=~\"cxtaf-cxeng|cxtm\"} |= \"ERROR\"",
+          "editorMode": "builder",
+          "expr": "count_over_time({namespace=\"cxtm\"} [10m])",
+          "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "Top Error Containers",
-      "type": "table"
+      "title": "CXTM Container Activity",
+      "type": "bargauge"
     },
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
       },
       "fieldConfig": {
         "defaults": {
@@ -738,6 +492,8 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -747,8 +503,10 @@
             "hideFrom": {
               "legend": false,
               "tooltip": false,
-              "vis": false
+              "vis": false,
+              "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 5,
@@ -783,14 +541,15 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 12
       },
       "id": 10,
       "options": {
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
@@ -801,38 +560,22 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_LOKI}"
+            "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
           },
-          "expr": "{container_name=~\"cxtaf-tam.*\"}",
-          "refId": "A",
-          "legendFormat": "CXTAF TAM"
-        },
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "expr": "{container_name=~\"cxtaf-dagu|cxtaf-kafka|cxtaf-nodered\"}",
-          "refId": "B",
-          "legendFormat": "CXTAF Core"
-        },
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "expr": "{container_name=~\"cxtaf-tae|cxtaf-spin|cxtaf-vaio\"}",
-          "refId": "C",
-          "legendFormat": "CXTAF Services"
+          "editorMode": "code",
+          "expr": "count_over_time({namespace=\"cxtaf-cxeng\"} |= `ERROR` [10m])",
+          "legendFormat": "CXTAF Services",
+          "queryType": "range",
+          "refId": "C"
         }
       ],
-      "title": "CXTAF Container Activity by Component",
+      "title": "CXTAF Error Analysis",
       "type": "timeseries"
     },
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_LOKI}"
+        "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
       },
       "fieldConfig": {
         "defaults": {
@@ -840,28 +583,20 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "opacity",
+            "fillOpacity": 80,
+            "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
-              "vis": false
+              "viz": false
             },
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
+            "lineWidth": 1,
             "scaleDistribution": {
               "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "normal"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -874,12 +609,128 @@
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
               }
             ]
-          },
-          "unit": "short"
+          }
         },
         "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "id": 13,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "auto",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
+          },
+          "editorMode": "code",
+          "expr": "topk(10, sum by (container_name) (rate({namespace=\"cxtaf-cxeng\"}[5m])))",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "High Volume Services",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.1.5",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate({namespace=\"cxtaf-cxeng\"} |= \"ERROR\" [5m]))",
+          "legendFormat": "Warnings",
+          "queryType": "range",
+          "refId": "B"
+        }
+      ],
+      "title": "Error Rate Alert",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
       },
       "gridPos": {
         "h": 8,
@@ -889,156 +740,35 @@
       },
       "id": 11,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "expr": "{container_name=~\"scheduler|webcron|migrate\", namespace=\"cxtm\"}",
-          "refId": "A",
-          "legendFormat": "CXTM Core Services"
-        },
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "expr": "{container_name=~\"web|logstream|taskdriver\", namespace=\"cxtm\"}",
-          "refId": "B",
-          "legendFormat": "CXTM Web Services"
-        },
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "expr": "{container_name=~\"mariadb|redis|vault|minio\", namespace=\"cxtm\"}",
-          "refId": "C",
-          "legendFormat": "CXTM Infrastructure"
-        }
-      ],
-      "title": "CXTM Container Activity by Component",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "loki",
-        "uid": "${DS_LOKI}"
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 24,
-        "x": 0,
-        "y": 36
-      },
-      "id": 12,
-      "options": {
         "dedupStrategy": "none",
         "enableLogDetails": true,
         "prettifyLogMessage": false,
         "showCommonLabels": false,
         "showLabels": false,
-        "showTime": true,
+        "showTime": false,
         "sortOrder": "Descending",
         "wrapLogMessage": false
       },
+      "pluginVersion": "10.1.5",
       "targets": [
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_LOKI}"
+            "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
           },
-          "expr": "{namespace=~\"cxtaf-cxeng|cxtm\"} |= \"ERROR\" | line_format \"[{{.container_name}}] {{.pod_name}}: {{ .__line__ }}\"",
+          "editorMode": "code",
+          "expr": "{namespace=\"cxtaf-cxeng\", container_name=~\".*scheduler.*|.*api.*|.*worker.*\"}",
+          "legendFormat": "CXTM Core Services",
+          "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "Recent Error Logs (All Systems)",
-      "type": "logs"
-    },
-    {
-      "datasource": {
-        "type": "loki",
-        "uid": "${DS_LOKI}"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 46
-      },
-      "id": 13,
-      "options": {
-        "dedupStrategy": "none",
-        "enableLogDetails": true,
-        "prettifyLogMessage": false,
-        "showCommonLabels": false,
-        "showLabels": false,
-        "showTime": true,
-        "sortOrder": "Descending",
-        "wrapLogMessage": false
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "expr": "{container_name=\"cxtaf-tam-scheduler\"}",
-          "refId": "A"
-        }
-      ],
-      "title": "CXTAF TAM Scheduler Logs",
-      "type": "logs"
-    },
-    {
-      "datasource": {
-        "type": "loki",
-        "uid": "${DS_LOKI}"
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 46
-      },
-      "id": 14,
-      "options": {
-        "dedupStrategy": "none",
-        "enableLogDetails": true,
-        "prettifyLogMessage": false,
-        "showCommonLabels": false,
-        "showLabels": false,
-        "showTime": true,
-        "sortOrder": "Descending",
-        "wrapLogMessage": false
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "expr": "{container_name=\"scheduler\", namespace=\"cxtm\"}",
-          "refId": "A"
-        }
-      ],
-      "title": "CXTM Scheduler Logs",
+      "title": "Service-Specific Monitoring",
       "type": "logs"
     }
   ],
   "refresh": "30s",
-  "schemaVersion": 37,
+  "schemaVersion": 38,
   "style": "dark",
   "tags": [
     "logs",
@@ -1056,8 +786,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "CXTAF & CXTM Log Analytics - Comprehensive Dashboard",
+  "title": "CXTAF & CXTM Log Analytics",
   "uid": "cxtaf-cxtm-logs-comprehensive",
-  "version": 1,
+  "version": 19,
   "weekStart": ""
 }

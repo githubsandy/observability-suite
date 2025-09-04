@@ -1,0 +1,268 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: promtail
+  namespace: ao
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: promtail
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  - nodes/proxy
+  - services
+  - endpoints
+  - pods
+  verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: promtail
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: promtail
+subjects:
+- kind: ServiceAccount
+  name: promtail
+  namespace: ao
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: promtail-config
+  namespace: ao
+data:
+  promtail.yaml: |
+    server:
+      http_listen_port: 3101
+      grpc_listen_port: 0
+
+    positions:
+      filename: /tmp/positions.yaml
+
+    clients:
+      - url: http://loki.ao.svc.cluster.local:3100/loki/api/v1/push
+
+    scrape_configs:
+      # CXTAF Application logs from all namespaces
+      - job_name: cxtaf-pods
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          # Only scrape CXTAF related pods
+          - source_labels:
+              - __meta_kubernetes_pod_label_app
+            regex: cxtaf.*
+            action: keep
+          - source_labels:
+              - __meta_kubernetes_pod_container_name
+            target_label: container_name
+          - source_labels:
+              - __meta_kubernetes_pod_name
+            target_label: pod_name
+          - source_labels:
+              - __meta_kubernetes_namespace
+            target_label: namespace
+          - source_labels:
+              - __meta_kubernetes_pod_label_component
+            target_label: cxtaf_component
+          - replacement: /var/log/pods/*$1/*.log
+            separator: /
+            source_labels:
+              - __meta_kubernetes_pod_uid
+              - __meta_kubernetes_pod_container_name
+            target_label: __path__
+
+      # CXTM Application logs (existing system)  
+      - job_name: cxtm-pods
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - cxtm
+        relabel_configs:
+          - source_labels:
+              - __meta_kubernetes_pod_container_name
+            target_label: container_name
+          - source_labels:
+              - __meta_kubernetes_pod_name
+            target_label: pod_name
+          - source_labels:
+              - __meta_kubernetes_namespace
+            target_label: namespace
+          - source_labels:
+              - __meta_kubernetes_pod_label_app
+            target_label: cxtm_app
+          - replacement: /var/log/pods/*$1/*.log
+            separator: /
+            source_labels:
+              - __meta_kubernetes_pod_uid
+              - __meta_kubernetes_pod_container_name
+            target_label: __path__
+
+      # System logs from all nodes
+      - job_name: system-logs
+        static_configs:
+          - targets:
+              - localhost
+            labels:
+              job: varlogs
+              __path__: /var/log/*log
+              host: "${HOSTNAME}"
+
+      # Kubernetes audit logs
+      - job_name: kubernetes-audit
+        static_configs:
+          - targets:
+              - localhost
+            labels:
+              job: kubernetes-audit
+              __path__: /var/log/audit/*.log
+              host: "${HOSTNAME}"
+
+      # Container logs for observability stack
+      - job_name: observability-stack
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - ao
+        relabel_configs:
+          - source_labels:
+              - __meta_kubernetes_pod_container_name
+            target_label: container_name
+          - source_labels:
+              - __meta_kubernetes_pod_name
+            target_label: pod_name
+          - source_labels:
+              - __meta_kubernetes_namespace
+            target_label: namespace
+          - source_labels:
+              - __meta_kubernetes_pod_label_app
+            target_label: observability_component
+          - replacement: /var/log/pods/*$1/*.log
+            separator: /
+            source_labels:
+              - __meta_kubernetes_pod_uid
+              - __meta_kubernetes_pod_container_name
+            target_label: __path__
+
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: promtail
+  namespace: ao
+  labels:
+    app: promtail
+spec:
+  selector:
+    matchLabels:
+      app: promtail
+  template:
+    metadata:
+      labels:
+        app: promtail
+    spec:
+      serviceAccount: promtail
+      containers:
+      - name: promtail
+        image: grafana/promtail:2.9.2
+        args:
+          - '-config.file=/etc/promtail/promtail.yaml'
+        ports:
+        - containerPort: 3101
+          name: http-metrics
+        volumeMounts:
+        - name: config
+          mountPath: /etc/promtail
+        - name: varlog
+          mountPath: /var/log
+          readOnly: true
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        - name: run
+          mountPath: /run/promtail
+        env:
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        resources:
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+        livenessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /ready
+            port: 3101
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        readinessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /ready
+            port: 3101
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Exists
+      volumes:
+      - name: config
+        configMap:
+          name: promtail-config
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: run
+        hostPath:
+          path: /run/promtail
+          type: DirectoryOrCreate
+      hostNetwork: false
+      hostPID: false
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: promtail
+  namespace: ao
+  labels:
+    app: promtail
+spec:
+  clusterIP: None
+  ports:
+  - name: http-metrics
+    port: 3101
+    targetPort: 3101
+  selector:
+    app: promtail
