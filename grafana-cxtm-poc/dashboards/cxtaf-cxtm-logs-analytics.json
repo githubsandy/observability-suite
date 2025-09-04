@@ -83,7 +83,7 @@
             "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
           },
           "editorMode": "code",
-          "expr": "count(rate({namespace=\"cxtaf-cxeng\"} [1h]))",
+          "expr": "sum(count_over_time({namespace=\"cxtaf-cxeng\"} [10m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -152,7 +152,7 @@
             "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
           },
           "editorMode": "code",
-          "expr": "count(rate({namespace=\"cxtm\"} [1h]))",
+          "expr": "sum(count_over_time({namespace=\"cxtm\"} |= \"error\" [10m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -221,12 +221,12 @@
             "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
           },
           "editorMode": "code",
-          "expr": "count(rate({namespace=~\"cxtaf-cxeng|cxtm\"} [1h]))",
+          "expr": "sum(count_over_time({namespace=~\"cxtaf-cxeng|cxtm\"} |= \"error\" [10m]))",
           "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "Total Errors",
+      "title": "Total Errors in 10m",
       "type": "stat"
     },
     {
@@ -290,7 +290,7 @@
             "uid": "f9e3ad89-8781-4abb-8b3d-5a02eaa3bf17"
           },
           "editorMode": "code",
-          "expr": "count(rate({namespace=~\"cxtaf-cxeng|cxtm\"} |~ \"WARN|WARNING\"  [1h]))",
+          "expr": "sum(count_over_time({namespace=~\"cxtaf-cxeng|cxtm\"} |~ \"WARN|WARNING\"  [1h]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -788,6 +788,6 @@
   "timezone": "",
   "title": "CXTAF & CXTM Log Analytics",
   "uid": "cxtaf-cxtm-logs-comprehensive",
-  "version": 19,
+  "version": 24,
   "weekStart": ""
 }
