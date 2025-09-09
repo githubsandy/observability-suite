@@ -22,7 +22,7 @@ spec:
         - containerPort: 8080
           name: http
         command: ["/bin/sh"]
-        args: ["-c", "while true; do mtr --report --report-cycles=10 --json 8.8.8.8 > /data/mtr-results.json; sleep 60; done & python3 -m http.server 8080 --directory /data"]
+        args: ["-c", "apk add --no-cache mtr python3 && mkdir -p /data && while true; do mtr --report --report-cycles=10 --json 8.8.8.8 > /data/mtr-results.json 2>/dev/null; sleep 60; done & python3 -m http.server 8080 --directory /data"]
         resources:
           limits:
             cpu: {{ .Values.mtr.resources.limits.cpu }}
