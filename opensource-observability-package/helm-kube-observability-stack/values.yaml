@@ -270,7 +270,7 @@ redisExporter:
 
 fastApiMetrics:
   image: python:3.11-slim                         # Custom FastAPI app with metrics
-  replicas: 1
+  replicas: 0  # Temporarily disabled due to network connectivity issues
   logLevel: "INFO"
   resources:
     limits:
