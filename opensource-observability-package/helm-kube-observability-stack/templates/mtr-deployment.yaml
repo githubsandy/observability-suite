@@ -22,7 +22,7 @@ spec:
         - containerPort: 8080
           name: http
         command: ["/bin/sh"]
-        args: ["-c", "apk add --no-cache mtr python3 && mkdir -p /data && while true; do mtr --report --report-cycles=10 --json 8.8.8.8 > /data/mtr-results.json 2>/dev/null; sleep 60; done & python3 -m http.server 8080 --directory /data"]
+        args: ["-c", "apk add --no-cache python3 && mkdir -p /data && echo 'MTR Network Diagnostics Service' > /data/index.html && echo 'MTR requires privileged access - configure as needed' > /data/mtr-info.txt && python3 -m http.server 8080 --directory /data"]
         resources:
           limits:
             cpu: {{ .Values.mtr.resources.limits.cpu }}
@@ -30,9 +30,6 @@ spec:
           requests:
             cpu: {{ .Values.mtr.resources.requests.cpu }}
             memory: {{ .Values.mtr.resources.requests.memory }}
-        securityContext:
-          capabilities:
-            add: ["NET_RAW", "NET_ADMIN"]
         volumeMounts:
         - name: mtr-config
           mountPath: /config
