@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tempo
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: tempo
+spec:
+  selector:
+    app: tempo
+  ports:
+  - name: http
+    port: 3200
+    targetPort: 3200
+    {{- if eq .Values.tempo.service.type "NodePort" }}
+    nodePort: 30320
+    {{- end }}
+  - name: grpc
+    port: 9095
+    targetPort: 9095
+  - name: jaeger-http
+    port: 14268
+    targetPort: 14268
+  - name: jaeger-grpc
+    port: 14250
+    targetPort: 14250
+  - name: zipkin
+    port: 9411
+    targetPort: 9411
+  type: {{ .Values.tempo.service.type | default "ClusterIP" }}

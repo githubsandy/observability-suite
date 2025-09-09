@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mtr
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: mtr
+spec:
+  replicas: {{ .Values.mtr.replicas }}
+  selector:
+    matchLabels:
+      app: mtr
+  template:
+    metadata:
+      labels:
+        app: mtr
+    spec:
+      containers:
+      - name: mtr
+        image: {{ .Values.mtr.image }}
+        ports:
+        - containerPort: 8080
+          name: http
+        command: ["/bin/sh"]
+        args: ["-c", "while true; do mtr --report --report-cycles=10 --json 8.8.8.8 > /data/mtr-results.json; sleep 60; done & python3 -m http.server 8080 --directory /data"]
+        resources:
+          limits:
+            cpu: {{ .Values.mtr.resources.limits.cpu }}
+            memory: {{ .Values.mtr.resources.limits.memory }}
+          requests:
+            cpu: {{ .Values.mtr.resources.requests.cpu }}
+            memory: {{ .Values.mtr.resources.requests.memory }}
+        securityContext:
+          capabilities:
+            add: ["NET_RAW", "NET_ADMIN"]
+        volumeMounts:
+        - name: mtr-config
+          mountPath: /config
+        - name: mtr-data
+          mountPath: /data
+      volumes:
+      - name: mtr-config
+        configMap:
+          name: mtr-config
+      - name: mtr-data
+        persistentVolumeClaim:
+          claimName: mtr-pvc

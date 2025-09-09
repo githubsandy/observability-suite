@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: grafana
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    
+    datasources:
+    # Prometheus Datasource
+    - name: Prometheus
+      type: prometheus
+      access: proxy
+      url: http://prometheus:9090
+      isDefault: true
+      editable: true
+      basicAuth: false
+      jsonData:
+        httpMethod: POST
+        manageAlerts: true
+        alertmanagerUid: alertmanager
+    
+    # Loki Datasource for Logs  
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki:3100
+      editable: true
+      basicAuth: false
+      jsonData:
+        maxLines: 1000
+        derivedFields:
+          - datasourceUid: tempo
+            matcherRegex: "traceID=(\\w+)"
+            name: TraceID
+            url: "$${__value.raw}"
+    
+    # Tempo Datasource for Traces
+    - name: Tempo
+      type: tempo
+      access: proxy
+      url: http://tempo:3200
+      uid: tempo
+      editable: true
+      basicAuth: false
+      jsonData:
+        httpMethod: GET
+        tracesToLogs:
+          datasourceUid: loki
+          tags: ['job', 'instance', 'pod', 'namespace']
+        tracesToMetrics:
+          datasourceUid: prometheus
+          tags: [{ key: 'service.name', value: 'service' }, { key: 'service.namespace', value: 'namespace' }]
+        serviceMap:
+          datasourceUid: prometheus

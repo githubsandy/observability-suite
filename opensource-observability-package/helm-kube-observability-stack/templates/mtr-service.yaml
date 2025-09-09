@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mtr
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: mtr
+spec:
+  selector:
+    app: mtr
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    {{- if eq .Values.mtr.service.type "NodePort" }}
+    nodePort: 30808
+    {{- end }}
+  type: {{ .Values.mtr.service.type | default "ClusterIP" }}
