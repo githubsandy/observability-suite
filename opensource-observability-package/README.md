@@ -2,10 +2,10 @@
 
 ## Overview
 
-A comprehensive observability solution for Kubernetes that provides monitoring, logging, and distributed tracing. This stack includes **14 active components** delivering complete visibility into your applications and infrastructure.
+A comprehensive observability solution for Kubernetes that provides monitoring, logging, and distributed tracing. This stack includes **17+ active components** delivering complete visibility into your applications and infrastructure.
 
 **Core Components:** Prometheus, Grafana, Loki, Alertmanager, Tempo  
-**Monitoring:** Node metrics, network analysis, database monitoring  
+**Monitoring:** Node metrics, container metrics, network analysis, database monitoring  
 **Environment:** Production-ready deployment for CALO Lab and general use
 
 ## Quick Start
@@ -46,6 +46,9 @@ After deployment, access the observability services using NodePort or port-forwa
 | **Prometheus** | `http://NODE-IP:30090` | Metrics and monitoring |
 | **Loki** | `http://NODE-IP:30310` | Log aggregation |
 | **Alertmanager** | `http://NODE-IP:30930` | Alert management |
+| **Tempo** | `http://NODE-IP:30320` | Distributed tracing |
+| **Smokeping** | `http://NODE-IP:30800` | Network latency monitoring |
+| **cAdvisor** | `http://NODE-IP:30080` | Container metrics |
 
 ```bash
 # Get node IP addresses
