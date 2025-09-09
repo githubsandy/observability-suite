@@ -4,8 +4,9 @@
 
   ✅ Kubernetes Cluster:
      - Any Kubernetes 1.20+ (EKS, GKE, AKS, on-premises, etc.)
-     - Minimum 4GB RAM, 2 CPU cores available
+     - Minimum 6GB RAM, 4 CPU cores available (for full 16-service stack)
      - Storage class configured (any: EBS, Persistent Disk, Longhorn, etc.)
+     - RWO (ReadWriteOnce) volume support
 
   ✅ Required Tools:
      - kubectl (configured to access their cluster)
@@ -63,28 +64,30 @@
   ✅ Infrastructure-Agnostic Features:
 
   - Auto-Detection: Automatically detects storage classes, node types
-  - Dynamic Namespace: All 55+ templates support any namespace
+  - Dynamic Namespace: All 60+ templates support any namespace (ao-os default)
   - Multi-Cloud: Works on AWS, GCP, Azure, on-premises
   - No External Dependencies: Self-contained, no SaaS requirements
   - Configurable Components: Enable/disable any component per client needs
+  - NodePort Support: Direct IP access without port-forwarding or ingress
 
   🚀 Deployment Process for Client
 
   Simple 3-Command Deployment:
 
-  # 1. Customize for client (takes 2-5 minutes)
-  helm install observability-stack ./helm-kube-observability-stack \
-    --namespace ${CLIENT_NAMESPACE} \
-    --create-namespace \
-    --set environment.namespace=${CLIENT_NAMESPACE} \
-    --set environment.name=${CLIENT_ENV} \
-    --set environment.cluster.storage.storageClass=${CLIENT_STORAGE}
+  # 1. Configure access method (NodePort for direct access)
+  ./configure-nodeport-access.sh enable
 
-  # 2. Verify deployment
-  ./verify-installation.sh observability-stack ${CLIENT_NAMESPACE}
+  # 2. Deploy complete observability stack
+  helm install ao-observability ./helm-kube-observability-stack \
+    --namespace ao-os \
+    --create-namespace
 
-  # 3. Access services
-  ./start-portForwarding-allService.sh ${CLIENT_NAMESPACE}
+  # 3. Verify deployment
+  ./verify-installation.sh
+
+  # Alternative: Port-forwarding access (local development)
+  ./configure-nodeport-access.sh disable
+  ./start-observability.sh
 
   📋 Pre-Deployment Checklist for Client
 
@@ -127,12 +130,52 @@
 
   💡 Key Selling Points for Clients
 
+  🌟 ENTERPRISE-GRADE OBSERVABILITY PLATFORM (16 Services):
+
+  📊 Core Services:
+  - Prometheus (metrics collection)
+  - Grafana (dashboards & visualization)  
+  - Loki (log aggregation)
+  - Promtail (log collection)
+
+  🚨 Advanced Monitoring:
+  - Tempo (distributed tracing)
+  - AlertManager (alert management)
+  - Smokeping (network latency monitoring)
+  - MTR (network diagnostics)
+
+  🔧 Infrastructure Exporters:
+  - Node Exporter (system metrics)
+  - Blackbox Exporter (endpoint monitoring)
+  - kube-state-metrics (Kubernetes health)
+
+  📦 Database & Application Monitoring:
+  - MongoDB Exporter
+  - PostgreSQL Exporter  
+  - Redis Exporter
+  - Custom FastAPI Metrics (test automation)
+
+  🎯 Business Benefits:
   1. ⚡ Fast Deployment: 15-30 minutes from zero to full observability
   2. 🔧 No Vendor Lock-in: Open source, runs anywhere
   3. 💰 Zero Licensing Costs: No SaaS fees, completely self-hosted
   4. 🛡️ Security: Data stays in their infrastructure
-  5. 📈 Complete Observability: Logs + Metrics + Traces + Container metrics
-  6. 🤖 Auto-Discovery: Automatically finds and monitors their services
+  5. 📈 Complete Observability: Logs + Metrics + Traces + Alerts + Network
+  6. 🤖 Auto-Configuration: Grafana datasources pre-configured
+  7. 🌐 Direct Access: NodePort or Ingress support
+  8. 📱 Production Ready: Validated in enterprise environments
 
-  The solution is extremely flexible - you can deploy it in any Kubernetes environment with minimal client-specific information and zero code
-   changes!
+  💼 ACCESS METHODS:
+
+  Option A: Direct Access (Recommended for enterprise)
+  - Grafana: http://NODE-IP:30300
+  - Prometheus: http://NODE-IP:30090
+  - AlertManager: http://NODE-IP:30930
+  - Tempo: http://NODE-IP:30320
+  - Smokeping: http://NODE-IP:30800
+  - Loki: http://NODE-IP:30310
+
+  Option B: Port-Forwarding (Development)
+  - All services accessible via localhost
+
+  The solution is extremely flexible - you can deploy it in any Kubernetes environment with minimal client-specific information and zero code changes!

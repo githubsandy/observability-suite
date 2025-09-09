@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tempo-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.tempo.storage.size }}
+  {{- if .Values.tempo.storage.storageClass }}
+  storageClassName: {{ .Values.tempo.storage.storageClass }}
+  {{- end }}

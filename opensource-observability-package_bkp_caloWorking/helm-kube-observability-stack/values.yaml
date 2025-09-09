@@ -270,7 +270,7 @@ redisExporter:
 
 fastApiMetrics:
   image: python:3.11-slim                         # Custom FastAPI app with metrics
-  replicas: 1
+  replicas: 0  # Temporarily disabled due to network connectivity issues
   logLevel: "INFO"
   resources:
     limits:
@@ -283,6 +283,78 @@ fastApiMetrics:
     type: NodePort            # Direct IP access enabled
     appPort: 8000
     metricsPort: 8001
+
+# Distributed Tracing Configuration
+tempo:
+  image: grafana/tempo:2.3.1
+  replicas: 1
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  service:
+    type: NodePort            # Direct IP access enabled
+    port: 3200
+  storage:
+    size: 10Gi
+    # storageClass: ""  # Use default storage class
+
+# Alert Management Configuration
+alertmanager:
+  image: prom/alertmanager:v0.26.0
+  replicas: 1
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 64Mi
+  service:
+    type: NodePort            # Direct IP access enabled
+    port: 9093
+  storage:
+    size: 5Gi
+    # storageClass: ""  # Use default storage class
+
+# Network Monitoring Configuration
+smokeping:
+  image: linuxserver/smokeping:latest
+  replicas: 1
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 64Mi
+  service:
+    type: NodePort            # Direct IP access enabled
+    port: 80
+  storage:
+    size: 5Gi
+    # storageClass: ""  # Use default storage class
+
+# Network Diagnostics Configuration  
+mtr:
+  image: alpine:latest
+  replicas: 1
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 64Mi
+  service:
+    type: NodePort            # Direct IP access enabled
+    port: 8080
+  storage:
+    size: 2Gi
+    # storageClass: ""  # Use default storage class
 
 ingress:
   enabled: true
@@ -330,3 +402,43 @@ ingress:
     tls:
       enabled: false
       secretName: blackbox-tls
+  
+  # Tempo Ingress Configuration
+  tempo:
+    enabled: true
+    host: tempo.os.com
+    path: /
+    pathType: Prefix
+    tls:
+      enabled: false
+      secretName: tempo-tls
+  
+  # AlertManager Ingress Configuration
+  alertmanager:
+    enabled: true
+    host: alertmanager.os.com
+    path: /
+    pathType: Prefix
+    tls:
+      enabled: false
+      secretName: alertmanager-tls
+  
+  # Smokeping Ingress Configuration
+  smokeping:
+    enabled: true
+    host: smokeping.os.com
+    path: /
+    pathType: Prefix
+    tls:
+      enabled: false
+      secretName: smokeping-tls
+  
+  # MTR Ingress Configuration
+  mtr:
+    enabled: true
+    host: mtr.os.com
+    path: /
+    pathType: Prefix
+    tls:
+      enabled: false
+      secretName: mtr-tls
