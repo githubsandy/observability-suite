@@ -18,6 +18,24 @@ spec:
       containers:
       - name: fastapi-metrics
         image: {{ .Values.fastApiMetrics.image }}
+        command: ["/bin/bash"]
+        args: ["-c", "cd /app && cp /app/config/* . && pip install --no-cache-dir -r requirements.txt && python -c \"
+import uvicorn
+import os
+from main import app
+from prometheus_client import start_http_server
+from threading import Thread
+
+# Start Prometheus metrics server on port 8001
+def start_metrics_server():
+    start_http_server(int(os.getenv('METRICS_PORT', 8001)))
+    
+metrics_thread = Thread(target=start_metrics_server)
+metrics_thread.start()
+
+# Start FastAPI app on port 8000
+uvicorn.run(app, host='0.0.0.0', port=int(os.getenv('APP_PORT', 8000)))
+\""]
         ports:
         - containerPort: 8000
           name: http-app
