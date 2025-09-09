@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres-exporter
-  namespace: {{ .Values.environment.namespace | default .Values.namespace }}
+  namespace: {{ .Values.namespace }}
   labels:
     app: postgres-exporter
 spec:

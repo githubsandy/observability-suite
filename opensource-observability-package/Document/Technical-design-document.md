@@ -56,36 +56,7 @@ The Enhanced Observability Stack is a comprehensive, infrastructure-agnostic mon
 
 ### High-Level Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Enhanced Observability Stack                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │    LOGS     │  │   METRICS   │  │   TRACES    │             │
-│  │             │  │             │  │             │             │
-│  │ Loki + PT   │←→│ Prometheus  │←→│ Tempo Direct│             │
-│  │             │  │             │  │             │             │
-│  └─────────────┘  └─────────────┘  └─────────────┘             │
-│         ↑                 ↑                 ↑                   │
-│         └─────────────────┼─────────────────┘                   │
-│                          ↓                                     │
-│  ┌─────────────────────────────────────────────────────────────┤
-│  │               Grafana Visualization Layer                   │
-│  │        (Auto-configured datasources & dashboards)          │
-│  └─────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │  NETWORK    │  │ ALERTING    │  │AUTO-DISCOVERY│             │
-│  │ MONITORING  │  │             │  │             │             │
-│  │ Smokeping   │  │AlertManager │  │ CXTAF/CXTM  │             │
-│  │ MTR + BB    │  │             │  │ Integration │             │
-│  └─────────────┘  └─────────────┘  └─────────────┘             │
-│                                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                    Kubernetes Infrastructure                    │
-└─────────────────────────────────────────────────────────────────┘
-```
+<img src="unifiedDataFlow.png" alt="Architecture" width="600" height="700">
 
 ### Component Architecture
 

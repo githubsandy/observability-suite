@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: fastapi-metrics
-  namespace: {{ .Values.environment.namespace | default .Values.namespace }}
+  namespace: {{ .Values.namespace }}
   labels:
     app: fastapi-metrics
 spec:

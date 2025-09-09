@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: prometheus
-  namespace: {{ .Values.environment.namespace | default .Values.namespace }}
+  namespace: {{ .Values.namespace }}
 spec:
   replicas: {{ .Values.prometheus.replicas }}
   selector:
@@ -13,7 +13,6 @@ spec:
       labels:
         app: prometheus
     spec:
-      serviceAccountName: prometheus
       containers:
       - name: prometheus
         image: {{ .Values.prometheus.image }}

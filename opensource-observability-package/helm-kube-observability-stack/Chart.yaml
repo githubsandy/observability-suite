@@ -1,18 +1,17 @@
 apiVersion: v2
 name: kube-observability-stack
-description: Enhanced Infrastructure-Agnostic Observability Stack with Container Metrics and Dynamic Namespace Support
+description: Comprehensive Kubernetes Observability Stack with Prometheus, Grafana, Loki and Exporters
 
-# Complete 15+ service enterprise observability platform with cAdvisor container metrics and multi-environment deployment
-# Includes: Core L.M.T Stack (Prometheus, Grafana, Loki, Tempo) + Container Metrics (cAdvisor via kubelet) +
-# Infrastructure Exporters (Node, kube-state-metrics, Blackbox) + Network Monitoring (Smokeping, MTR) +
-# Enhanced Components (AlertManager, Auto-Discovery) + Dynamic Namespace Resolution for Infrastructure Portability
+# Complete 12-service enterprise observability platform for modern test automation and Kubernetes monitoring
+# Includes: Core Stack (Prometheus, Grafana, Loki, Promtail) + Infrastructure Exporters (Node, Blackbox) + 
+# Foundation Exporters (kube-state-metrics, MongoDB, PostgreSQL) + Application Layer (Jenkins, Redis, FastAPI)
 type: application
 
 # Chart version - increment for chart changes
-version: 2.0.0
+version: 1.0.0
 
-# Application version - observability stack version  
-appVersion: "2.0.0"
+# Application version - observability stack version
+appVersion: "1.0.0"
 
 # Additional metadata
 home: https://github.com/githubsandy/opensource-observability-package
@@ -27,36 +26,8 @@ keywords:
   - prometheus
   - grafana
   - loki
-  - tempo
-  - cadvisor
-  - container-metrics
   - kubernetes
-  - infrastructure-agnostic
-  - dynamic-namespace
   - exporters
-  - network-monitoring
   - test-automation
 annotations:
   category: Analytics
-  "helm.sh/release-notes": |
-    ## Version 2.0.0 - Enhanced Container Metrics & Infrastructure Portability
-    
-    ### ✅ Major New Features:
-    - **Container-Level Metrics**: cAdvisor integration via kubelet for zero-pod container monitoring
-    - **Dynamic Namespace Resolution**: All 55+ templates support infrastructure-agnostic deployment
-    - **Enhanced RBAC**: Complete security configuration with proper kubelet access permissions
-    - **Multi-Environment Support**: Seamless deployment across cloud providers and on-premises
-    
-    ### 🔧 Technical Improvements:
-    - Updated all Helm templates with {{ .Values.environment.namespace | default .Values.namespace }} logic
-    - Added comprehensive Prometheus RBAC for cAdvisor metrics access
-    - Enhanced configuration management for multi-cloud deployments
-    - Validated template syntax and Helm rendering across all components
-    
-    ### 📋 Breaking Changes:
-    - Namespace resolution logic updated (backward compatible with fallback)
-    - New RBAC requirements for container metrics collection
-    
-    ### 🚀 Deployment:
-    - Zero configuration changes needed for existing deployments
-    - New deployments automatically benefit from enhanced features
