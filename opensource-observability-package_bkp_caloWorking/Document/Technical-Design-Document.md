@@ -1,9 +1,10 @@
 # Enhanced Observability Stack - Technical Design Document
 
-**Version:** 2.0  
-**Date:** September 2024  
+**Version:** 2.1  
+**Date:** September 2025  
 **Authors:** CALO Lab Engineering Team  
-**Status:** Production Ready
+**Status:** Production Deployed (CALO Lab)
+**Deployment:** ao-observability (revision 16) in ao-os namespace
 
 ---
 
@@ -248,6 +249,120 @@ Grafana Platform
     └── User Management Integration
 ```
 
+### Production Component Inventory
+
+The CALO Lab deployment consists of **14 active components** providing comprehensive observability coverage:
+
+#### 📊 **Core Observability Stack (4 Components)**
+- **Prometheus** - Metrics collection and monitoring
+- **Grafana** - Visualization and dashboards  
+- **Loki** - Log aggregation and querying
+- **Promtail** - Log collection agent
+
+#### 🔧 **Infrastructure Exporters (2 Components)**
+- **Node Exporter** - System metrics (CPU, Memory, Disk, Network)
+- **Blackbox Exporter** - External endpoint monitoring and health checks
+
+#### ⚡ **Foundation Exporters (3 Components)**  
+- **kube-state-metrics** - Kubernetes cluster state metrics
+- **MongoDB Exporter** - NoSQL database performance metrics
+- **PostgreSQL Exporter** - Relational database metrics
+- **Redis Exporter** - Cache and session store metrics
+
+#### 🚀 **Enhanced Monitoring (4 Components)**
+- **Tempo** - Distributed tracing and performance analysis
+- **Alertmanager** - Alert routing and notification management
+- **Smokeping** - Network latency and connectivity monitoring
+- **MTR Analyzer** - Network path analysis and diagnostics
+
+#### ❌ **Disabled Components (2 Components)**
+- **Jenkins Exporter** - Disabled due to deprecated Schema 1 image format
+- **FastAPI Metrics** - Disabled for current deployment (not required)
+
+**Total Active Components:** 14 out of 16 available components providing production-ready observability.
+
+### Production Component Status Matrix
+
+#### ✅ Core Observability Stack
+
+| Component | Status | Resource Usage | Description |
+|-----------|--------|----------------|-------------|
+| **Prometheus** | ✅ Running | 250m CPU, 256Mi RAM | Time-series metrics database |
+| **Grafana** | ✅ Running | 250m CPU, 256Mi RAM | Visualization and alerting UI |
+| **Loki** | ✅ Running | 250m CPU, 256Mi RAM | Log aggregation system |
+| **Promtail** | ✅ Running | 100m CPU, 64Mi RAM | Log collection agent |
+
+#### ✅ Infrastructure Monitoring
+
+| Component | Status | Deployment Type | Metrics Provided |
+|-----------|--------|-----------------|------------------|
+| **Node Exporter** | ✅ Running | DaemonSet | CPU, Memory, Disk, Network |
+| **Blackbox Exporter** | ✅ Running | Deployment | HTTP, DNS, TCP endpoint health |
+| **kube-state-metrics** | ✅ Running | Deployment | Pod, Service, Deployment status |
+
+#### ✅ Enhanced Capabilities
+
+| Component | Status | Features | Use Case |
+|-----------|--------|----------|----------|
+| **Tempo** | ✅ Running | Distributed tracing | Request flow analysis |
+| **Alertmanager** | ✅ Running | Alert routing | Incident management |
+| **Smokeping** | ✅ Running | Network latency graphs | Network performance |
+| **MTR Analyzer** | ✅ Running | Network path analysis | Network troubleshooting |
+
+#### ✅ Database & Application Monitoring
+
+| Component | Status | Target Systems | Metrics |
+|-----------|--------|----------------|---------|
+| **MongoDB Exporter** | ✅ Running | NoSQL databases | Connections, operations, performance |
+| **PostgreSQL Exporter** | ✅ Running | SQL databases | Queries, connections, replication |
+| **Redis Exporter** | ✅ Running | Cache systems | Memory usage, commands, clients |
+
+#### ❌ Disabled Components
+
+| Component | Status | Reason | Alternative |
+|-----------|--------|--------|-------------|
+| **Jenkins Exporter** | ❌ Disabled | Deprecated Schema 1 image format | Use Prometheus Jenkins plugin |
+| **FastAPI Metrics** | ❌ Disabled | Not required for current deployment | Enable when custom app metrics needed |
+
+### Monitoring Capabilities & Queries
+
+#### Prometheus Metrics Collection Examples
+
+```yaml
+# System Health Monitoring
+up                                       # Service availability
+node_cpu_seconds_total                   # CPU usage
+node_memory_MemAvailable_bytes          # Available memory
+
+# Kubernetes Health Monitoring
+kube_pod_status_phase                    # Pod lifecycle states
+kube_deployment_status_replicas          # Deployment health
+kube_node_status_condition               # Node conditions
+
+# Application Performance Monitoring
+fastapi_request_duration_seconds         # API response times
+test_executions_total                    # Test automation metrics
+```
+
+#### Loki Log Queries
+
+```logql
+# Log Filtering Examples
+{namespace="ao-os"}                      # Observability namespace logs
+{app="prometheus"} |= "error"           # Error logs from Prometheus
+{job="varlogs"} | json | level="ERROR"  # Structured error logs
+```
+
+#### Tempo Tracing Configuration
+
+```bash
+# Trace Collection Endpoints
+# Jaeger: http://tempo:14268/api/traces
+# Zipkin: http://tempo:9411/api/v2/spans  
+# OTLP gRPC: tempo:4317
+# OTLP HTTP: tempo:4318
+```
+
 ---
 
 ## 🔧 Technical Implementation Details
@@ -288,8 +403,8 @@ helm-kube-observability-stack/
 ```yaml
 # Environment-specific configuration
 environment:
-  name: "calo-lab"              # Auto-detected or specified
-  namespace: "ao"               # Dynamic deployment namespace
+  name: "calo_lab"              # YAML-compatible underscore format (not "calo-lab")
+  namespace: "ao-os"            # Actual CALO lab deployment namespace
   
   cluster:
     detection:
@@ -325,6 +440,15 @@ components:
     mtrAnalyzer: true          # Path analysis
     blackboxEnhanced: true     # Comprehensive endpoint testing
     
+  applications:
+    jenkins: false             # Disabled due to deprecated image format
+    fastapi: false             # Disabled for current deployment
+    
+  databases:
+    mongodb: true              # MongoDB exporter active
+    postgresql: true           # PostgreSQL exporter active  
+    redis: true                # Redis exporter active
+    
   intelligence:
     autoDiscovery: true        # Service auto-discovery
     cxtafIntegration: true     # CXTAF framework integration
@@ -337,8 +461,8 @@ performance:
     
   retention:
     metrics: "30d"             # Prometheus retention
-    logs: "30d"                # Loki retention
-    traces: "7d"               # Tempo retention
+    logs: "168h"               # Loki retention (Go duration format)
+    traces: "168h"             # Tempo retention (Go duration format - was "7d")
     
   scrapeIntervals:
     default: "30s"
@@ -354,15 +478,16 @@ performance:
 namespace: {{ .Values.environment.namespace | default .Values.namespace }}
 
 # Resolution Priority:
-# 1. environment.namespace (e.g., "ao" for CALO lab)
+# 1. environment.namespace (e.g., "ao-os" for CALO lab)
 # 2. namespace (fallback: "kube-observability-stack")
 ```
 
 **Benefits:**
-- **Environment Consistency**: All 55+ components deploy to the same namespace
+- **Environment Consistency**: All 14 active components deploy to the same namespace
 - **Multi-Environment Support**: Different namespaces per deployment target
 - **Backward Compatibility**: Maintains fallback for legacy configurations  
 - **Infrastructure Agnostic**: Works across cloud providers and on-premises
+- **Production Tested**: Configuration validated through multiple deployment cycles
 
 ### Data Flow Architecture
 
@@ -400,6 +525,49 @@ Network Targets
 [Smokeping] ←→ [MTR Analyzer] ←→ [Blackbox Exporter]
          ↓              ↓              ↓
 [Prometheus Metrics] → [Grafana Dashboards] → [Alert Rules]
+```
+
+### CALO Lab Production Access Configuration
+
+#### NodePort Service Access (Production)
+
+The CALO lab deployment uses NodePort services for direct IP access without ingress complexity:
+
+| Service | NodePort | Internal Port | URL Pattern | Description |
+|---------|----------|---------------|-------------|-------------|
+| **Grafana** | 30300 | 3000 | `http://NODE-IP:30300` | Primary observability dashboard |
+| **Prometheus** | 30090 | 9090 | `http://NODE-IP:30090` | Metrics collection and querying |
+| **Loki** | 30310 | 3100 | `http://NODE-IP:30310` | Log aggregation and search |
+| **Alertmanager** | 30930 | 9093 | `http://NODE-IP:30930` | Alert management and routing |
+| **Tempo** | 30320 | 3200 | `http://NODE-IP:30320` | Distributed tracing interface |
+| **Blackbox** | 30115 | 9115 | `http://NODE-IP:30115` | Endpoint health monitoring |
+
+#### Production Environment Status
+
+```yaml
+# Current CALO Lab Deployment
+release_name: ao-observability
+namespace: ao-os
+revision: 16
+status: deployed
+chart_version: kube-observability-stack-1.0.0
+active_components: 14
+deployment_path: /home/administrator/skumark5/osp/observability-suite/opensource-observability-package
+```
+
+#### Service Discovery Commands
+
+```bash
+# Get cluster node IPs for access
+kubectl get nodes -o wide
+
+# Verify all services are exposed
+kubectl get svc -n ao-os | grep NodePort
+
+# Check specific service health
+curl -I http://YOUR-NODE-IP:30090/-/healthy   # Prometheus
+curl -I http://YOUR-NODE-IP:30310/ready       # Loki  
+curl -I http://YOUR-NODE-IP:30300/api/health  # Grafana
 ```
 
 ---
@@ -743,15 +911,15 @@ test-deployment:
 deploy-production:
   stage: deploy
   script:
-    - ./install-observability-stack.sh prod-stack ao calo-lab
+    - ./install-observability-stack.sh ao-observability ao-os calo_lab
   only:
     - main
 
 verify-production:
   stage: verify
   script:
-    - ./verify-installation.sh prod-stack ao
-    - ./check-services.sh ao
+    - ./verify-installation.sh ao-observability ao-os
+    - ./check-services.sh ao-os
 ```
 
 ### Operational Procedures
@@ -892,6 +1060,88 @@ quality_metrics:
 
 ## 🔧 Troubleshooting & Diagnostics
 
+### CALO Lab Deployment Experience (Production Issues Resolved)
+
+#### Critical Configuration Issues Encountered
+
+**Revision 16 Deployment History:** The CALO lab deployment reached revision 16 through systematic resolution of multiple configuration issues:
+
+```
+CALO Lab Production Issues & Resolutions:
+├── YAML Configuration Errors
+│   ├── Alertmanager Route Structure
+│   │   ├── Problem: "yaml: line 30: did not find expected key"
+│   │   └── Solution: Fixed route indentation from malformed to 10-space alignment
+│   ├── Environment Name Format
+│   │   ├── Problem: "calo-lab" causing YAML key errors  
+│   │   └── Solution: Changed to "calo_lab" (underscore format)
+│   └── Duration Format Incompatibility
+│       ├── Problem: "7d" format causing tempo parsing errors
+│       └── Solution: Changed to Go duration format "168h"
+├── Container Image Issues
+│   ├── Jenkins Exporter Deprecation
+│   │   ├── Problem: "Pulling Schema 1 images have been deprecated"
+│   │   └── Solution: Disabled component (components.applications.jenkins: false)
+│   ├── Nginx Invalid Version
+│   │   ├── Problem: nginx:2.0.0 image not found
+│   │   └── Solution: Updated to nginx:1.24 (valid version)
+│   └── FastAPI Metrics Configuration
+│       ├── Problem: Deployment startup failures
+│       └── Solution: Disabled for current deployment
+├── Volume Permission Issues  
+│   ├── Grafana PVC Write Permissions
+│   │   ├── Problem: "GF_PATHS_DATA='/var/lib/grafana' is not writable"
+│   │   └── Solution: Added initContainer with proper securityContext (user 472)
+│   └── PVC Mounting Failures
+│       ├── Problem: Permission denied on data directories
+│       └── Solution: fsGroup and initContainer configuration
+├── Template Expression Failures
+│   ├── Complex Resource Templates
+│   │   ├── Problem: "unknown field spec.template.spec.containers[0].resources.sizing"
+│   │   └── Solution: Simplified to direct value references
+│   └── Boolean Template Issues
+│       ├── Problem: Template parsing errors in conditional blocks
+│       └── Solution: Fixed boolean expressions and conditional logic
+└── Namespace Template Conflicts
+    ├── Duplicate Namespace Creation
+    │   ├── Problem: Helm --create-namespace conflicts with template
+    │   └── Solution: Remove ./templates/000_namespace.yaml file
+```
+
+#### Production-Tested Solutions
+
+**Deployment Commands That Work:**
+```bash
+# Remove conflicting namespace template
+rm -f ./helm-kube-observability-stack/templates/000_namespace.yaml
+
+# Production deployment
+helm install ao-observability ./helm-kube-observability-stack --namespace ao-os --create-namespace
+
+# Configuration upgrades  
+helm upgrade ao-observability ./helm-kube-observability-stack --namespace ao-os
+```
+
+**Critical Values.yaml Fixes:**
+```yaml
+# Fixed configuration values
+environment:
+  name: "calo_lab"  # Underscore format (not "calo-lab")
+
+performance:
+  retention:
+    loki: "168h"    # Go duration format (not "7d")
+    tempo: "168h"   # Go duration format (not "7d")
+
+components:
+  applications:
+    jenkins: false  # Disabled problematic component
+    fastapi: false  # Disabled for current deployment
+
+image:
+  tag: "1.24"      # Valid nginx version (not "2.0.0")
+```
+
 ### Common Issues & Resolutions
 
 #### Deployment Issues
@@ -951,35 +1201,41 @@ Performance Troubleshooting:
 #### Built-in Diagnostics
 ```bash
 # Comprehensive health check
-./check-services.sh ao
+./check-services.sh ao-os
 
 # Detailed deployment verification  
-./verify-installation.sh observability-stack ao
+./verify-installation.sh ao-observability ao-os
 
 # Real-time monitoring
-kubectl get pods -n ao -w
+kubectl get pods -n ao-os -w
 
 # Resource utilization
-kubectl top pods -n ao
+kubectl top pods -n ao-os
 kubectl top nodes
 
 # Event analysis
-kubectl get events -n ao --sort-by=.metadata.creationTimestamp
+kubectl get events -n ao-os --sort-by=.metadata.creationTimestamp
 ```
 
 #### Advanced Diagnostics
 ```bash
 # Prometheus configuration validation
-kubectl exec -n ao prometheus-0 -- promtool config check /etc/prometheus/prometheus.yml
+kubectl exec -n ao-os prometheus-0 -- promtool config check /etc/prometheus/prometheus.yml
 
 # Loki configuration validation
-kubectl exec -n ao loki-0 -- /usr/bin/loki -config.file=/etc/loki/local-config.yaml -verify-config
+kubectl exec -n ao-os loki-0 -- /usr/bin/loki -config.file=/etc/loki/local-config.yaml -verify-config
 
 # Grafana datasource testing
-kubectl exec -n ao grafana-xxx -- curl -s http://prometheus:9090/api/v1/query?query=up
+kubectl exec -n ao-os grafana-xxx -- curl -s http://prometheus:9090/api/v1/query?query=up
 
 # Network connectivity testing
-kubectl exec -n ao prometheus-0 -- wget -qO- http://node-exporter:9100/metrics | head
+kubectl exec -n ao-os prometheus-0 -- wget -qO- http://node-exporter:9100/metrics | head
+
+# Check deployment status
+helm status ao-observability -n ao-os
+
+# List all services with NodePort access
+kubectl get svc -n ao-os | grep NodePort
 ```
 
 ---
@@ -1064,11 +1320,26 @@ kubectl exec -n ao prometheus-0 -- wget -qO- http://node-exporter:9100/metrics |
 ---
 
 **Document Version Control:**
-- Version 2.0: Initial enhanced observability stack design
-- Last Updated: September 2024
+- Version 2.0: Initial enhanced observability stack design (September 2024)
+- Version 2.1: Production deployment updates with CALO lab experience (September 2025)
+  - Updated with actual deployment configuration (ao-observability in ao-os namespace)
+  - Added production troubleshooting experience from revision 16 deployment
+  - Updated NodePort service access information with actual ports
+  - Documented disabled components (Jenkins, FastAPI) and reasons
+  - Added namespace template removal requirement
+  - Updated all diagnostic commands and CI/CD references
+- Last Updated: September 2025
 - Review Schedule: Quarterly
-- Next Review: December 2024
+- Next Review: December 2025
 
 ---
 
-*This document represents the technical design and architecture of the Enhanced Observability Stack. For implementation details, deployment guides, and operational procedures, refer to the accompanying README.md and operational documentation.*
+## Document Organization
+
+This technical design document contains comprehensive architectural details, troubleshooting guides, component specifications, and production deployment experience. For quick start and basic usage instructions, refer to the simplified **README.md** in the project root.
+
+**Document Scope:**
+- **README.md** - Simple, objective usage guide and quick start
+- **Technical-Design-Document.md** - Complete technical specifications and architecture details
+
+*This document represents the complete technical design and architecture of the Enhanced Observability Stack. For basic deployment and usage instructions, refer to the accompanying README.md.*
