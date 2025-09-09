@@ -49,6 +49,9 @@ spec:
         - name: docker
           mountPath: /var/lib/docker
           readOnly: true
+        - name: containerd
+          mountPath: /run/containerd
+          readOnly: true
         - name: disk
           mountPath: /dev/disk
           readOnly: true
@@ -72,6 +75,9 @@ spec:
       - name: docker
         hostPath:
           path: /var/lib/docker
+      - name: containerd  
+        hostPath:
+          path: /run/containerd
       - name: disk
         hostPath:
           path: /dev/disk

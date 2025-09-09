@@ -270,7 +270,7 @@ redisExporter:
 
 # Container Metrics Configuration
 cadvisor:
-  image: gcr.io/cadvisor/cadvisor:v0.47.0
+  image: gcr.io/cadvisor/cadvisor:v0.45.0
   resources:
     limits:
       cpu: 300m
