@@ -27,6 +27,8 @@ spec:
         - containerPort: 8080
           name: http
           protocol: TCP
+        securityContext:
+          privileged: true
         resources:
           limits:
             cpu: {{ .Values.cadvisor.resources.limits.cpu }}
@@ -51,12 +53,12 @@ spec:
           mountPath: /dev/disk
           readOnly: true
         args:
-        - --housekeeping_interval=10s
-        - --max_housekeeping_interval=15s
+        - --housekeeping_interval=30s
+        - --max_housekeeping_interval=35s
         - --event_storage_event_limit=default=0
         - --event_storage_age_limit=default=0
-        - --disable_metrics=percpu,sched,tcp,udp,disk,diskIO,accelerator,hugetlb,referenced_memory,cpu_topology,resctrl
-        - --docker_only
+        - --disable_metrics=percpu,sched,tcp,udp,accelerator,hugetlb,referenced_memory,cpu_topology,resctrl
+        - --store_container_labels=false
       volumes:
       - name: rootfs
         hostPath:
