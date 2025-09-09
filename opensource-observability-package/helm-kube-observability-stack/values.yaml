@@ -236,8 +236,8 @@ postgresExporter:
 
 # Application Layer Exporters Configuration
 jenkinsExporter:
-  image: lovoo/jenkins_exporter:latest
-  replicas: 1
+  image: nginx:1.21-alpine
+  replicas: 0  # Temporarily disabled - will fix image later
   jenkinsServer: "http://your-jenkins-host:8080"  # Change to your Jenkins URL
   jenkinsUsername: "your-jenkins-username"        # Change to your Jenkins username
   jenkinsPassword: "your-jenkins-password"        # Change to your Jenkins password/token
