@@ -118,27 +118,6 @@ helm upgrade ao-observability ./helm-kube-observability-stack --namespace ao-os
 - **Jenkins Exporter**: CI/CD pipeline metrics
 - **FastAPI Metrics**: Custom application metrics
 
-## 🎯 Pre-configured Integration
-
-**Grafana Datasources (Auto-configured):**
-- **Prometheus**: `http://prometheus:9090`
-- **Loki**: `http://loki:3100`  
-- **Tempo**: `http://tempo:3200`
-
-**Prometheus Targets (Auto-discovered):**
-- All exporters and services automatically scraped
-- cAdvisor metrics from all cluster nodes
-- Custom application metrics endpoints
-
-## 🏆 Production Features
-
-- ✅ **Multi-Node Deployment** - DaemonSets on all cluster nodes
-- ✅ **Persistent Storage** - Data survives pod restarts
-- ✅ **Resource Limits** - Production-ready resource constraints
-- ✅ **RBAC Enabled** - Proper Kubernetes permissions
-- ✅ **Security Contexts** - Non-root containers where possible  
-- ✅ **Health Checks** - Liveness and readiness probes
-- ✅ **Auto-Scaling Ready** - HPA compatible configurations
 
 ## 🔍 Troubleshooting
 
@@ -172,7 +151,7 @@ kubectl get endpoints -n ao-os
 ## 🌟 Success Metrics
 
 - **17+ Services Running** across production cluster
-- **100% Deployment Success** on CALO lab environment
+- **100% Deployment Success** on lab environment
 - **Direct IP Access** without ingress or port-forwarding
 - **Auto-configured** Grafana with all datasources
 - **Enterprise-Ready** for production workloads
