@@ -169,4 +169,4 @@ kubectl get endpoints -n ao-os
 - **100% Deployment Success** on lab environment
 - **Direct IP Access** without ingress or port-forwarding
 - **Auto-configured** Grafana with all datasources
-- **Enterprise-Ready** for production workloads
+- **Enterprise-Ready** for production workloads.
