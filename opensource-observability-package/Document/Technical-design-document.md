@@ -1,16 +1,16 @@
-# Enhanced Observability Stack - Technical Design Document
+# Enterprise Observability Stack - Technical Design Document
 
 **Version:** 3.0  
 **Date:** September 2025  
-**Authors:** CALO Lab Engineering Team  
-**Status:** Production Deployed (CALO Lab) - 17 Services Active
+**Authors:** Sandeep Kumar  
+**Status:**  Deployed (CALO Lab)  
 **Deployment:** ao-observability (revision 25+) in ao-os namespace
 
 ---
 
-## 📋 Executive Summary
+## Executive Summary
 
-The Enhanced Observability Stack is a comprehensive, infrastructure-agnostic monitoring solution designed to provide complete **Logs + Metrics + Traces (L.M.T)** observability for Kubernetes environments. This document outlines the technical architecture, design decisions, and implementation details of a production-ready observability platform optimized for the University of Texas at Arlington (UTA) CALO lab environment while maintaining universal deployability.
+The Enterprise Observability Stack is a comprehensive, infrastructure-agnostic monitoring solution designed to provide complete **Logs + Metrics + Traces (L.M.T)** observability for Kubernetes environments. This document outlines the technical architecture, design decisions, and implementation details of a production-ready observability platform that scales from basic monitoring to enterprise-grade operations.
 
 ### Key Innovations
 
@@ -20,10 +20,11 @@ The Enhanced Observability Stack is a comprehensive, infrastructure-agnostic mon
 - **Infrastructure Agnostic**: Deploy anywhere with intelligent environment adaptation
 - **Advanced Network Monitoring**: Comprehensive path analysis and latency monitoring
 - **Production-Grade Alerting**: Pre-configured rules and intelligent routing
+- **Enterprise Architecture**: Complete 16-service deployment for production environments
 
 ---
 
-## 🎯 Project Objectives
+## Project Objectives & Evolution
 
 ### Primary Goals
 
@@ -47,414 +48,74 @@ The Enhanced Observability Stack is a comprehensive, infrastructure-agnostic mon
    - Multi-cloud and on-premises compatibility
    - **Direct NodePort access** without ingress complexity
 
-4. **CALO Lab Optimization**
-   - Specialized integration with CXTAF/CXTM frameworks
-   - UTA network topology awareness
-   - Test automation workflow monitoring
-   - Research environment optimization
-   - **16-node cluster coverage** with DaemonSet deployments
-
-## 🏆 Current Production State (Version 3.0)
-
-### Deployment Statistics
-- **Total Services**: 17 production services
-- **Success Rate**: 100% deployment success
-- **Cluster Coverage**: 16-node CALO lab cluster
-- **Namespace**: ao-os (plug & play)
-- **Access Method**: Direct NodePort (no port-forwarding)
-- **Auto-configuration**: Grafana with pre-configured datasources
-
-### Service Distribution
-```
-📊 Core Observability: 4 services
-├── Prometheus (metrics database)
-├── Grafana (visualization + auto-configured datasources)
-├── Loki (log aggregation)
-└── Promtail (log collection)
-
-🚨 Advanced Monitoring: 4 services  
-├── Tempo (distributed tracing)
-├── AlertManager (alert routing)
-├── Smokeping (network latency)
-└── MTR (network diagnostics)
-
-🔧 Infrastructure Monitoring: 4 services
-├── Node Exporter (15 DaemonSet pods - system metrics)
-├── cAdvisor (15 DaemonSet pods - container metrics)
-├── Blackbox Exporter (endpoint monitoring)
-└── kube-state-metrics (K8s object metrics)
-
-📦 Application/Database Monitoring: 5 services
-├── MongoDB Exporter (database performance)
-├── PostgreSQL Exporter (database metrics)
-├── Redis Exporter (cache performance)
-├── Jenkins Exporter (CI/CD pipeline metrics)
-└── FastAPI Metrics (test automation metrics)
-```
-
-### Production Validation
-- **CALO Lab Deployment**: Fully operational since September 2025
-- **Multi-Node Coverage**: DaemonSets running on all 16 cluster nodes
-- **Direct Access**: All services accessible via NODE-IP:PORT
-- **Performance**: Optimized resource allocation and monitoring
-- **Reliability**: Persistent storage, proper RBAC, security contexts
-
-### Service Access Configuration (NodePort)
-```
-Primary Services (Direct Access):
-├── Grafana Dashboard        → http://10.122.28.111:30300
-├── Prometheus Server        → http://10.122.28.111:30090
-├── AlertManager Console     → http://10.122.28.111:30930
-├── Tempo Tracing API        → http://10.122.28.111:30320
-├── Smokeping Network UI     → http://10.122.28.111:30800
-├── Loki Log API             → http://10.122.28.111:30310
-├── cAdvisor Container UI    → http://10.122.28.111:30080
-├── Blackbox Endpoint UI     → http://10.122.28.111:30115
-└── MTR Network Diagnostics  → http://10.122.28.111:30808
-
-Internal Services (ClusterIP):
-├── Database Exporters       → Scraped by Prometheus
-├── Application Exporters    → Auto-discovered targets
-└── DaemonSet Services       → Node-local access
-```
-
-### Auto-Configuration Features
-- **Grafana Datasources**: Prometheus, Loki, and Tempo pre-configured
-- **Prometheus Targets**: All exporters automatically discovered
-- **Service Discovery**: Kubernetes API integration for dynamic targets
-- **Security Context**: Non-root containers with proper permissions
-- **Resource Management**: Production-ready CPU/memory limits
+4. **Enterprise Deployment**
+   - **Complete Stack**: Full 16-service enterprise observability platform
+   - **Modular Components**: Enable/disable services as needed through configuration
+   - **Environment Adaptation**: Automatic configuration based on deployment target
+   - **Production Ready**: Battle-tested components for enterprise environments
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture Overview
 
-### High-Level Architecture Overview
+### Enterprise Architecture
 
-<img src="unifiedDataFlow.png" alt="Architecture" width="600" height="700">
+The observability stack is designed as a comprehensive enterprise platform with modular components:
 
-### Component Architecture
+<img src="Images/Enterprise Architecture.png" alt="Enterprise Architecture" width="600" height="800">
+---
 
-#### Core Observability Layer
+## Component Architecture & Service Matrix
 
-**1. Metrics Collection (Prometheus Ecosystem)**
-```
-Prometheus Server
-├── Enhanced Service Discovery
-│   ├── Kubernetes API Integration
-│   ├── CXTAF/CXTM Auto-Detection
-│   └── Cross-Namespace Monitoring
-├── Storage & Retention
-│   ├── Local TSDB Storage (30GB+)
-│   ├── Configurable Retention Policies
-│   └── High-Availability Support
-└── Export Integrations
-    ├── Infrastructure Exporters
-    │   ├── Node Exporter (System metrics - DaemonSet)
-    │   ├── cAdvisor (Container metrics - DaemonSet on 16 nodes)
-    │   ├── kube-state-metrics (Kubernetes object metrics)
-    │   └── Blackbox Exporter (Endpoint monitoring)
-    ├── Database Exporters
-    │   ├── MongoDB Exporter (Database performance)
-    │   ├── PostgreSQL Exporter (Database metrics)
-    │   └── Redis Exporter (Cache performance)
-    ├── Application Exporters
-    │   ├── Jenkins Exporter (CI/CD metrics)
-    │   └── FastAPI Metrics (Test automation metrics)
-    └── Network Monitoring
-        ├── Smokeping (Latency monitoring)
-        └── MTR (Network diagnostics)
-```
+### Enterprise Observability Stack (16 Services)
 
-**2. Log Aggregation (Loki Ecosystem)**
-```
-Loki Server
-├── Log Ingestion
-│   ├── Promtail DaemonSet Collection
-│   ├── Structured Log Parsing
-│   └── Label Extraction & Indexing
-├── Storage Architecture
-│   ├── Object Storage Compatible
-│   ├── Chunk-based Storage Model
-│   └── Configurable Retention
-└── Query Engine
-    ├── LogQL Advanced Queries
-    ├── Trace Correlation Support
-    └── Metrics Extraction
-```
+The complete observability platform includes the following components organized by functional category:
 
-**3. Distributed Tracing (Tempo Direct Ingestion)**
-```
-Tempo Backend
-├── Trace Ingestion
-│   ├── Multi-Protocol Support (OTLP, Jaeger, Zipkin)
-│   ├── Direct Application Integration
-│   └── Direct multi-protocol ingestion
-├── Trace Storage
-│   ├── Block-based Storage Model
-│   ├── Efficient Compression
-│   └── Scalable Architecture
-└── Correlation Engine
-    ├── Trace-to-Logs Correlation
-    ├── Trace-to-Metrics Linking
-    └── Service Map Generation
+##### **Core Observability Stack (4 Components)**
+| Component | Purpose | Key Features | NodePort |
+|-----------|---------|--------------|----------|
+| **Prometheus** | Metrics Database | Time-series data, PromQL queries, service discovery | 30090 |
+| **Grafana** | Visualization Platform | Dashboards, alerting, multi-datasource support | 30300 |
+| **Loki** | Log Aggregation | Label-based indexing, LogQL queries, cost-effective storage | 30310 |
+| **Promtail** | Log Collection | Multi-source ingestion, parsing, label extraction | Internal |
 
-Direct Application Integration
-├── Multi-Protocol Ingestion (No Collector Needed)
-│   ├── OTLP (gRPC and HTTP)
-│   ├── Jaeger (gRPC and HTTP)
-│   └── Zipkin (HTTP)
-├── Direct Application Configuration
-│   ├── Applications send traces directly to Tempo
-│   ├── Simple endpoint configuration
-│   └── No intermediate components required
-└── Self-Hosted Benefits
-    ├── Complete control over trace data
-    ├── Zero external dependencies
-    └── Cost-free trace storage and analysis
-```
+##### **Advanced Monitoring (4 Components)**
+| Component | Purpose | Key Features | NodePort |
+|-----------|---------|--------------|----------|
+| **Tempo** | Distributed Tracing | Multi-protocol ingestion, trace correlation, service maps | 30320 |
+| **AlertManager** | Alert Management | Rule processing, routing, notification channels | 30930 |
+| **Smokeping** | Network Latency Monitoring | RTT measurement, packet loss tracking, historical graphs | 30800 |
+| **MTR** | Network Path Analysis | Hop-by-hop analysis, route diagnostics, topology mapping | 30808 |
 
-#### Enhanced Monitoring Layer
+##### **Infrastructure Exporters (3 Components)**
+| Component | Purpose | Key Features | Deployment Type |
+|-----------|---------|--------------|-----------------|
+| **Node Exporter** | System Metrics | CPU, memory, disk, network statistics | DaemonSet |
+| **Blackbox Exporter** | Endpoint Monitoring | HTTP, DNS, TCP, SSL certificate checks | Deployment |
+| **kube-state-metrics** | Kubernetes Metrics | Pod, service, deployment health and status | Deployment |
 
-**4. Network Intelligence**
-```
-Smokeping Network Monitor
-├── Multi-Target Monitoring
-│   ├── CALO Lab Internal Services
-│   ├── External Endpoint Testing
-│   └── Network Path Visualization
-├── Performance Analytics
-│   ├── Latency Trend Analysis
-│   ├── Packet Loss Detection
-│   └── Historical Performance Data
-└── Integration Points
-    ├── Prometheus Metrics Export
-    ├── Grafana Dashboard Integration
-    └── Alert Rule Integration
-
-MTR Network Path Analyzer
-├── Real-Time Path Discovery
-│   ├── Hop-by-Hop Analysis
-│   ├── Route Optimization Insights
-│   └── Network Topology Mapping
-├── Performance Metrics
-│   ├── Per-Hop Latency Measurement
-│   ├── Packet Loss Analysis
-│   └── Path Stability Monitoring
-└── Python-Based Implementation
-    ├── Custom Metrics Collection
-    ├── Prometheus Integration
-    └── Configurable Target Management
-
-Enhanced Blackbox Exporter
-├── Comprehensive Module Library (15+)
-│   ├── HTTP/HTTPS Endpoint Testing
-│   ├── TCP Port Connectivity
-│   ├── DNS Resolution Monitoring
-│   ├── SSL Certificate Validation
-│   ├── ICMP Network Testing
-│   └── Custom CXTAF/CXTM Health Checks
-├── Advanced Configuration
-│   ├── Module-Based Architecture
-│   ├── Configurable Timeouts & Retries
-│   └── Custom Success Criteria
-└── Integration Features
-    ├── Prometheus Metrics Export
-    ├── Grafana Dashboard Support
-    └── Alert Rule Templates
-```
-
-**5. Production Alerting (AlertManager)**
-```
-AlertManager System
-├── Alert Processing Pipeline
-│   ├── Rule Evaluation Engine
-│   ├── Alert Grouping & Deduplication
-│   └── Silence Management
-├── Notification Routing
-│   ├── Multi-Channel Support (Slack, Email, Webhook)
-│   ├── Escalation Policies
-│   └── CALO Lab Specific Routing
-├── Alert Rules Library
-│   ├── Infrastructure Health Rules
-│   ├── Application Performance Rules
-│   ├── Network Performance Rules
-│   └── CXTAF/CXTM Specific Rules
-└── High Availability
-    ├── Cluster Mode Support
-    ├── State Synchronization
-    └── Failover Mechanisms
-```
-
-#### Intelligence & Automation Layer
-
-**6. Auto-Discovery Engine**
-```
-Service Discovery System
-├── Kubernetes Integration
-│   ├── API Server Monitoring
-│   ├── Resource Watch Streams
-│   └── Dynamic Configuration Updates
-├── CALO Lab Specific Detection
-│   ├── CXTAF Service Auto-Detection
-│   ├── CXTM Workflow Monitoring
-│   └── Database Service Discovery
-├── Configuration Management
-│   ├── Dynamic Prometheus Targets
-│   ├── Grafana Datasource Updates
-│   └── Alert Rule Provisioning
-└── Environment Adaptation
-    ├── Cluster Capability Detection
-    ├── Storage Class Selection
-    └── Resource Optimization
-```
-
-**7. Visualization Layer (Enhanced Grafana)**
-```
-Grafana Platform
-├── Auto-Configured Integration
-│   ├── Pre-configured Datasources
-│   │   ├── Prometheus (Metrics)
-│   │   ├── Loki (Logs)
-│   │   ├── Tempo (Traces)
-│   │   └── AlertManager (Alerts)
-│   └── Intelligent Correlation
-│       ├── Trace-to-Log Linking
-│       ├── Metric Exemplars
-│       └── Cross-Service Navigation
-├── Dashboard Library
-│   ├── Infrastructure Overview
-│   ├── Application Performance
-│   ├── Network Analysis
-│   ├── CXTAF/CXTM Monitoring
-│   └── Alert Management
-└── Advanced Features
-    ├── Custom Panel Development
-    ├── Plugin Management
-    └── User Management Integration
-```
-
-### Production Component Inventory
-
-The CALO Lab deployment consists of **14 active components** providing comprehensive observability coverage:
-
-#### 📊 **Core Observability Stack (4 Components)**
-- **Prometheus** - Metrics collection and monitoring
-- **Grafana** - Visualization and dashboards  
-- **Loki** - Log aggregation and querying
-- **Promtail** - Log collection agent
-
-#### 🔧 **Infrastructure Exporters (2 Components)**
-- **Node Exporter** - System metrics (CPU, Memory, Disk, Network)
-- **Blackbox Exporter** - External endpoint monitoring and health checks
-
-#### ⚡ **Foundation Exporters (3 Components)**  
-- **kube-state-metrics** - Kubernetes cluster state metrics
-- **MongoDB Exporter** - NoSQL database performance metrics
-- **PostgreSQL Exporter** - Relational database metrics
-- **Redis Exporter** - Cache and session store metrics
-
-#### 🚀 **Enhanced Monitoring (4 Components)**
-- **Tempo** - Distributed tracing and performance analysis
-- **Alertmanager** - Alert routing and notification management
-- **Smokeping** - Network latency and connectivity monitoring
-- **MTR Analyzer** - Network path analysis and diagnostics
-
-#### ❌ **Disabled Components (2 Components)**
-- **Jenkins Exporter** - Disabled due to deprecated Schema 1 image format
-- **FastAPI Metrics** - Disabled for current deployment (not required)
-
-**Total Active Components:** 14 out of 16 available components providing production-ready observability.
-
-### Production Component Status Matrix
-
-#### ✅ Core Observability Stack
-
-| Component | Status | Resource Usage | Description |
-|-----------|--------|----------------|-------------|
-| **Prometheus** | ✅ Running | 250m CPU, 256Mi RAM | Time-series metrics database |
-| **Grafana** | ✅ Running | 250m CPU, 256Mi RAM | Visualization and alerting UI |
-| **Loki** | ✅ Running | 250m CPU, 256Mi RAM | Log aggregation system |
-| **Promtail** | ✅ Running | 100m CPU, 64Mi RAM | Log collection agent |
-
-#### ✅ Infrastructure Monitoring
-
-| Component | Status | Deployment Type | Metrics Provided |
-|-----------|--------|-----------------|------------------|
-| **Node Exporter** | ✅ Running | DaemonSet | CPU, Memory, Disk, Network |
-| **Blackbox Exporter** | ✅ Running | Deployment | HTTP, DNS, TCP endpoint health |
-| **kube-state-metrics** | ✅ Running | Deployment | Pod, Service, Deployment status |
-
-#### ✅ Enhanced Capabilities
-
-| Component | Status | Features | Use Case |
-|-----------|--------|----------|----------|
-| **Tempo** | ✅ Running | Distributed tracing | Request flow analysis |
-| **Alertmanager** | ✅ Running | Alert routing | Incident management |
-| **Smokeping** | ✅ Running | Network latency graphs | Network performance |
-| **MTR Analyzer** | ✅ Running | Network path analysis | Network troubleshooting |
-
-#### ✅ Database & Application Monitoring
-
-| Component | Status | Target Systems | Metrics |
-|-----------|--------|----------------|---------|
-| **MongoDB Exporter** | ✅ Running | NoSQL databases | Connections, operations, performance |
-| **PostgreSQL Exporter** | ✅ Running | SQL databases | Queries, connections, replication |
-| **Redis Exporter** | ✅ Running | Cache systems | Memory usage, commands, clients |
-
-#### ❌ Disabled Components
-
-| Component | Status | Reason | Alternative |
-|-----------|--------|--------|-------------|
-| **Jenkins Exporter** | ❌ Disabled | Deprecated Schema 1 image format | Use Prometheus Jenkins plugin |
-| **FastAPI Metrics** | ❌ Disabled | Not required for current deployment | Enable when custom app metrics needed |
-
-### Monitoring Capabilities & Queries
-
-#### Prometheus Metrics Collection Examples
-
-```yaml
-# System Health Monitoring
-up                                       # Service availability
-node_cpu_seconds_total                   # CPU usage
-node_memory_MemAvailable_bytes          # Available memory
-
-# Kubernetes Health Monitoring
-kube_pod_status_phase                    # Pod lifecycle states
-kube_deployment_status_replicas          # Deployment health
-kube_node_status_condition               # Node conditions
-
-# Application Performance Monitoring
-fastapi_request_duration_seconds         # API response times
-test_executions_total                    # Test automation metrics
-```
-
-#### Loki Log Queries
-
-```logql
-# Log Filtering Examples
-{namespace="ao-os"}                      # Observability namespace logs
-{app="prometheus"} |= "error"           # Error logs from Prometheus
-{job="varlogs"} | json | level="ERROR"  # Structured error logs
-```
-
-#### Tempo Tracing Configuration
-
-```bash
-# Trace Collection Endpoints
-# Jaeger: http://tempo:14268/api/traces
-# Zipkin: http://tempo:9411/api/v2/spans  
-# OTLP gRPC: tempo:4317
-# OTLP HTTP: tempo:4318
-```
+##### **Database & Application Monitoring (5 Components)**
+| Component | Purpose | Key Features | Target Systems |
+|-----------|---------|--------------|----------------|
+| **MongoDB Exporter** | NoSQL Database Metrics | Connection pools, operations, performance | MongoDB |
+| **PostgreSQL Exporter** | SQL Database Metrics | Query performance, replication, connections | PostgreSQL |
+| **Redis Exporter** | Cache Monitoring | Memory usage, commands, client connections | Redis |
+| **FastAPI Metrics** | Application Metrics | Custom business metrics, API performance | FastAPI Apps |
+| **Jenkins Exporter** | CI/CD Pipeline Metrics | Build status, queue depth, job performance | Jenkins |
 
 ---
 
-## 🔧 Technical Implementation Details
+## Data Flow Architecture
 
-### Deployment Architecture
+### End-to-End Data Pipeline
 
-#### Helm Chart Structure
+![alt text](Images/dataFLow.png)
+---
+
+## Technical Implementation
+
+### Helm Chart Structure
+
 ```
 helm-kube-observability-stack/
 ├── Chart.yaml                     # Chart metadata
@@ -462,34 +123,74 @@ helm-kube-observability-stack/
 └── templates/
     ├── core/                      # Core observability components
     │   ├── prometheus/
+    │   │   ├── prometheus-deployment.yaml
+    │   │   ├── prometheus-service.yaml
+    │   │   └── prometheus-config.yaml
     │   ├── grafana/
-    │   └── loki/
+    │   │   ├── grafana-deployment.yaml
+    │   │   ├── grafana-service.yaml
+    │   │   ├── grafana-pvc.yaml
+    │   │   └── grafana-datasources-config.yaml
+    │   ├── loki/
+    │   │   ├── loki-deployment.yaml
+    │   │   └── loki-service.yaml
+    │   └── promtail/
+    │       ├── promtail-deployment.yaml
+    │       ├── promtail-service.yaml
+    │       ├── promtail-config.yaml
+    │       └── promtail-rbac.yaml
     ├── enhanced/                  # Enhanced monitoring services
     │   ├── tempo/
-    │   ├── tempo/                        # Direct tracing ingestion
+    │   │   ├── tempo-deployment.yaml
+    │   │   ├── tempo-service.yaml
+    │   │   ├── tempo-pvc.yaml
+    │   │   └── tempo-config.yaml
     │   └── alertmanager/
+    │       ├── alertmanager-deployment.yaml
+    │       ├── alertmanager-service.yaml
+    │       ├── alertmanager-pvc.yaml
+    │       └── alertmanager-config.yaml
     ├── network/                   # Network monitoring suite
     │   ├── smokeping/
+    │   │   ├── smokeping-deployment.yaml
+    │   │   ├── smokeping-service.yaml
+    │   │   ├── smokeping-pvc.yaml
+    │   │   └── smokeping-config.yaml
     │   ├── mtr/
+    │   │   ├── mtr-deployment.yaml
+    │   │   ├── mtr-service.yaml
+    │   │   ├── mtr-pvc.yaml
+    │   │   └── mtr-config.yaml
     │   └── blackbox/
+    │       ├── blackbox-exporter-deployment.yaml
+    │       ├── blackbox-exporter-service.yaml
+    │       └── blackbox-exporter-config.yaml
     ├── infrastructure/            # Infrastructure exporters
     │   ├── node-exporter/
+    │   │   ├── node-exporter-daemonset.yaml
+    │   │   └── node-exporter-service.yaml
     │   ├── kube-state-metrics/
-    │   ├── cadvisor/              # Container-level metrics
-    │   └── promtail/
-    └── automation/               # Auto-discovery & configuration
-        ├── service-discovery/
-        └── dynamic-config/
+    │   │   ├── kube-state-metrics-deployment.yaml
+    │   │   ├── kube-state-metrics-service.yaml
+    │   │   └── kube-state-metrics-rbac.yaml
+    │   └── database-exporters/
+    │       ├── mongodb-exporter-*.yaml
+    │       ├── postgres-exporter-*.yaml
+    │       └── redis-exporter-*.yaml
+    └── application/               # Application monitoring
+        ├── fastapi-metrics-*.yaml
+        └── jenkins-exporter-*.yaml
 ```
 
-#### Configuration Management
+### Configuration Management
 
-**Dynamic Values Architecture:**
+#### Dynamic Values Architecture
+
 ```yaml
 # Environment-specific configuration
 environment:
-  name: "calo_lab"              # YAML-compatible underscore format (not "calo-lab")
-  namespace: "ao-os"            # Actual CALO lab deployment namespace
+  name: "calo_lab"              # YAML-compatible underscore format
+  namespace: "ao-os"            # Target deployment namespace
   
   cluster:
     detection:
@@ -517,8 +218,6 @@ components:
   enhanced:
     tempo: true                 # Distributed tracing
     alertmanager: true          # Production alerting
-    cadvisor: true              # Container-level metrics via kubelet
-    # Direct Tempo ingestion - no collector dependencies
     
   network:
     smokeping: true            # Network latency monitoring
@@ -526,13 +225,13 @@ components:
     blackboxEnhanced: true     # Comprehensive endpoint testing
     
   applications:
-    jenkins: false             # Disabled due to deprecated image format
-    fastapi: false             # Disabled for current deployment
+    jenkins: false             # Configurable based on environment
+    fastapi: false             # Enable for custom app metrics
     
   databases:
-    mongodb: true              # MongoDB exporter active
-    postgresql: true           # PostgreSQL exporter active  
-    redis: true                # Redis exporter active
+    mongodb: true              # MongoDB exporter
+    postgresql: true           # PostgreSQL exporter  
+    redis: true                # Redis exporter
     
   intelligence:
     autoDiscovery: true        # Service auto-discovery
@@ -547,7 +246,7 @@ performance:
   retention:
     metrics: "30d"             # Prometheus retention
     logs: "168h"               # Loki retention (Go duration format)
-    traces: "168h"             # Tempo retention (Go duration format - was "7d")
+    traces: "168h"             # Tempo retention
     
   scrapeIntervals:
     default: "30s"
@@ -555,93 +254,179 @@ performance:
     network: "60s"
 ```
 
-#### Dynamic Namespace Resolution
+#### Access Configuration Strategies
 
-**Template Logic for Infrastructure Portability:**
-```yaml
-# All Helm templates use dynamic namespace resolution
-namespace: {{ .Values.environment.namespace | default .Values.namespace }}
+##### **Strategy 1: Port-Forwarding (Development)**
 
-# Resolution Priority:
-# 1. environment.namespace (e.g., "ao-os" for CALO lab)
-# 2. namespace (fallback: "kube-observability-stack")
+**Use Case**: Local development, testing, temporary access
+
+```bash
+# Grafana
+kubectl port-forward svc/grafana 3000:3000 -n ao-os
+
+# Prometheus  
+kubectl port-forward svc/prometheus 9090:9090 -n ao-os
+
+# Loki
+kubectl port-forward svc/loki 3100:3100 -n ao-os
+
+# AlertManager
+kubectl port-forward svc/alertmanager 9093:9093 -n ao-os
 ```
 
-**Benefits:**
-- **Environment Consistency**: All 14 active components deploy to the same namespace
-- **Multi-Environment Support**: Different namespaces per deployment target
-- **Backward Compatibility**: Maintains fallback for legacy configurations  
-- **Infrastructure Agnostic**: Works across cloud providers and on-premises
-- **Production Tested**: Configuration validated through multiple deployment cycles
+**Access URLs**: 
+- Grafana: http://localhost:3000
+- Prometheus: http://localhost:9090
+- Loki: http://localhost:3100
 
-### Data Flow Architecture
+##### **Strategy 2: NodePort Services (Production)**
 
-#### Metrics Pipeline
-```
-Application/Infrastructure
-         ↓
-[Exporters] → [Prometheus] → [Grafana Visualization]
-         ↓                        ↑
-[Service Discovery] ←→ [AlertManager] ←→ [Alert Rules]
-```
-
-#### Logs Pipeline  
-```
-Applications/Containers
-         ↓
-[Promtail Collection] → [Loki Ingestion] → [LogQL Processing]
-         ↓                        ↓
-[Label Extraction] → [Index Creation] → [Grafana Visualization]
-```
-
-#### Traces Pipeline
-```
-Applications (Auto-Instrumented)
-         ↓
-[Applications] → [Direct Tempo Ingestion] → [Trace Storage]
-         ↓                        ↓
-[Sampling & Processing] → [Correlation Engine] → [Grafana Visualization]
-```
-
-#### Network Monitoring Pipeline
-```
-Network Targets
-         ↓
-[Smokeping] ←→ [MTR Analyzer] ←→ [Blackbox Exporter]
-         ↓              ↓              ↓
-[Prometheus Metrics] → [Grafana Dashboards] → [Alert Rules]
-```
-
-### CALO Lab Production Access Configuration
-
-#### NodePort Service Access (Production)
-
-The CALO lab deployment uses NodePort services for direct IP access without ingress complexity:
-
-| Service | NodePort | Internal Port | URL Pattern | Description |
-|---------|----------|---------------|-------------|-------------|
-| **Grafana** | 30300 | 3000 | `http://NODE-IP:30300` | Primary observability dashboard |
-| **Prometheus** | 30090 | 9090 | `http://NODE-IP:30090` | Metrics collection and querying |
-| **Loki** | 30310 | 3100 | `http://NODE-IP:30310` | Log aggregation and search |
-| **Alertmanager** | 30930 | 9093 | `http://NODE-IP:30930` | Alert management and routing |
-| **Tempo** | 30320 | 3200 | `http://NODE-IP:30320` | Distributed tracing interface |
-| **Blackbox** | 30115 | 9115 | `http://NODE-IP:30115` | Endpoint health monitoring |
-
-#### Production Environment Status
+**Use Case**: Direct IP access without ingress complexity
 
 ```yaml
-# Current CALO Lab Deployment
-release_name: ao-observability
-namespace: ao-os
-revision: 16
-status: deployed
-chart_version: kube-observability-stack-1.0.0
-active_components: 14
-deployment_path: /home/administrator/skumark5/osp/observability-suite/opensource-observability-package
+# Service configuration example
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: grafana
+  ports:
+  - name: http
+    port: 3000
+    targetPort: 3000
+    {{- if eq .Values.grafana.service.type "NodePort" }}
+    nodePort: 30300
+    {{- end }}
+  type: {{ .Values.grafana.service.type | default "ClusterIP" }}
+```
+
+**Production NodePort Mapping**:
+- **Grafana**: http://NODE-IP:30300
+- **Prometheus**: http://NODE-IP:30090
+- **AlertManager**: http://NODE-IP:30930
+- **Tempo**: http://NODE-IP:30320
+- **Smokeping**: http://NODE-IP:30800
+- **Loki**: http://NODE-IP:30310
+
+##### **Strategy 3: Ingress (Enterprise)**
+
+**Use Case**: Hostname-based routing with SSL termination
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: observability-ingress
+  namespace: {{ .Values.namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  rules:
+  - host: grafana.company.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000
+  - host: prometheus.company.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus
+            port:
+              number: 9090
+```
+
+---
+
+## Deployment Guide
+
+### Prerequisites
+
+Before starting, ensure the following tools are installed and configured:
+
+- **kubectl**: Kubernetes command-line tool
+  - Install: [kubectl installation guide](https://kubernetes.io/docs/tasks/tools/)
+- **Helm**: Kubernetes package manager (version 3.x)
+  - Install: [Helm installation guide](https://helm.sh/docs/intro/install/)
+- **Minikube** (optional): Local Kubernetes cluster for testing
+  - Install: [Minikube installation guide](https://minikube.sigs.k8s.io/docs/start/)
+
+### Deployment Implementation
+
+#### Step 1: Environment Setup
+
+**1. Verify Prerequisites**
+```bash
+# Verify requirements
+kubectl version --client
+helm version
+kubectl cluster-info
+```
+
+**2. Set Deployment Variables**
+```bash
+# Default deployment values
+RELEASE_NAME="ao-observability"
+NAMESPACE="ao-os"
+CHART_DIR="./helm-kube-observability-stack"
+```
+
+#### Step 2: Deploy Enterprise Observability Stack
+
+**1. Initial Deployment**
+```bash
+# Deploy complete observability stack with enterprise features
+helm install $RELEASE_NAME $CHART_DIR --namespace $NAMESPACE --create-namespace
+```
+
+**2. Configuration Updates**
+```bash
+# Apply configuration changes or upgrades
+helm upgrade $RELEASE_NAME $CHART_DIR --namespace $NAMESPACE
+```
+
+**3. Verify Deployment**
+```bash
+# Check all services
+kubectl get pods -n $NAMESPACE
+kubectl get svc -n $NAMESPACE
+
+# Verify NodePort services for direct access
+kubectl get svc -n $NAMESPACE | grep NodePort
+```
+
+### Production Environment Commands
+
+#### CALO Lab Production Deployment
+```bash
+# Production-tested deployment commands
+helm install ao-observability ./helm-kube-observability-stack \
+  --namespace ao-os \
+  --create-namespace \
+  --set environment.name=calo_lab \
+  --set environment.namespace=ao-os
+
+# Configuration upgrades  
+helm upgrade ao-observability ./helm-kube-observability-stack \
+  --namespace ao-os
+
+# Health verification
+./verify-installation.sh ao-observability ao-os
+./check-services.sh ao-os
 ```
 
 #### Service Discovery Commands
-
 ```bash
 # Get cluster node IPs for access
 kubectl get nodes -o wide
@@ -657,124 +442,59 @@ curl -I http://YOUR-NODE-IP:30300/api/health  # Grafana
 
 ---
 
-## 🎯 Design Decisions & Rationale
+## Troubleshooting & Diagnostics
 
-### Architecture Decisions
+### Common Issues & Solutions
 
-#### 1. Microservices vs Monolithic Approach
-**Decision:** Microservices architecture with containerized components  
-**Rationale:** 
-- Independent scaling and lifecycle management
-- Technology diversity support (Go, Python, etc.)
-- Fault isolation and resilience
-- Kubernetes-native deployment patterns
+#### Deployment Issues
+```bash
+# Template rendering errors
+helm lint ./helm-kube-observability-stack
+yamllint ./values.yaml
 
-#### 2. Pull vs Push Model for Metrics
-**Decision:** Hybrid approach with Prometheus pull model + Direct Tempo ingestion  
-**Rationale:**
-- Prometheus pull model for infrastructure metrics (reliable, efficient)
-- Direct Tempo ingestion for traces (simple, no dependencies)
-- Self-hosted trace analysis (cost-free)
-- Service discovery integration for dynamic environments
+# Resource conflicts
+kubectl describe pod <pod-name> -n ao-os
+kubectl get events -n ao-os --sort-by=.metadata.creationTimestamp
 
-#### 3. Storage Strategy
-**Decision:** Local storage with cloud-compatible architecture  
-**Rationale:**
-- Zero external dependencies requirement
-- Cost optimization (no cloud storage fees)
-- Data sovereignty and security compliance
-- Migration path to cloud storage if needed
-
-#### 4. Auto-Discovery Implementation
-**Decision:** Kubernetes-native service discovery with custom CALO lab extensions  
-**Rationale:**
-- Dynamic environment adaptation
-- Reduced manual configuration overhead
-- Framework-specific optimizations (CXTAF/CXTM)
-- Scalable to large cluster deployments
-
-### Technology Choices
-
-#### Core Technologies
-
-| Component | Technology | Rationale |
-|-----------|------------|-----------|
-| **Metrics** | Prometheus | Industry standard, excellent Kubernetes integration, powerful query language |
-| **Logs** | Loki | Lightweight, Prometheus-like architecture, excellent Grafana integration |
-| **Traces** | Tempo Direct Ingestion | Modern tracing stack, multi-protocol support, excellent correlation capabilities |
-| **Visualization** | Grafana | Best-in-class visualization, extensive datasource support, rich ecosystem |
-| **Alerting** | AlertManager | Native Prometheus integration, sophisticated routing, production-proven |
-
-#### Enhanced Technologies
-
-| Component | Technology | Rationale |
-|-----------|------------|-----------|
-| **Container Metrics** | cAdvisor via kubelet | Zero-pod container resource monitoring, CPU/memory/network per container, built-in Kubernetes integration |
-| **Network Monitoring** | Smokeping + MTR | Proven network analysis tools, rich visualization, historical data |
-| **Endpoint Testing** | Enhanced Blackbox | Comprehensive testing modules, flexible configuration, Prometheus integration |
-| **Direct Ingestion** | Tempo Multi-Protocol | Simple configuration, no dependencies, cost-free |
-| **Orchestration** | Helm | Kubernetes package management standard, templating capabilities, lifecycle management |
-
-### Security Considerations
-
-#### Authentication & Authorization
-```
-Security Layer Architecture:
-├── Kubernetes RBAC Integration
-│   ├── Service Account Management
-│   ├── Role-Based Access Control
-│   └── Network Policies
-├── Grafana Authentication
-│   ├── Local User Management
-│   ├── LDAP/OAuth Integration Support
-│   └── Role-Based Dashboards
-└── Network Security
-    ├── TLS Encryption (Internal Communication)
-    ├── Network Segmentation
-    └── Ingress Security Headers
+# RBAC permission issues
+kubectl auth can-i --list --as=system:serviceaccount:ao-os:prometheus
 ```
 
-#### Data Security
-- **Encryption at Rest:** Kubernetes secret management for sensitive configurations
-- **Encryption in Transit:** TLS for all inter-service communication
-- **Access Control:** Kubernetes RBAC for all components
-- **Network Security:** Network policies for traffic isolation
+#### Performance Issues
+```bash
+# High memory usage
+kubectl top pods -n ao-os
+kubectl top nodes
+
+# Storage issues
+kubectl get pvc -n ao-os
+kubectl describe pvc <pvc-name> -n ao-os
+
+# Network connectivity
+kubectl exec -n ao-os prometheus-0 -- wget -qO- http://node-exporter:9100/metrics | head
+```
+
+### Advanced Diagnostics
+
+#### Configuration Validation
+```bash
+# Prometheus configuration validation
+kubectl exec -n ao-os prometheus-0 -- promtool config check /etc/prometheus/prometheus.yml
+
+# Loki configuration validation  
+kubectl exec -n ao-os loki-0 -- /usr/bin/loki -config.file=/etc/loki/local-config.yaml -verify-config
+
+# Grafana datasource testing
+kubectl exec -n ao-os grafana-xxx -- curl -s http://prometheus:9090/api/v1/query?query=up
+```
 
 ---
 
-## 📊 Performance & Scalability
+## Performance & Scalability
 
-### Performance Characteristics
+### Resource Requirements
 
-#### Throughput Specifications
-| Component | Metric | Specification |
-|-----------|---------|---------------|
-| **Prometheus** | Metrics/sec | 1M+ samples/sec |
-| **Loki** | Log entries/sec | 100K+ entries/sec |
-| **Tempo** | Traces/sec | 10K+ spans/sec |
-| **Grafana** | Concurrent users | 100+ users |
-
-#### Resource Requirements
-
-**Minimum Requirements (Small Environment):**
-```yaml
-resources:
-  small:
-    prometheus:
-      memory: "2Gi"
-      cpu: "1000m"
-    grafana:
-      memory: "512Mi"
-      cpu: "500m"
-    loki:
-      memory: "1Gi"
-      cpu: "500m"
-    tempo:
-      memory: "1Gi"
-      cpu: "500m"
-```
-
-**Recommended Requirements (Medium Environment - CALO Lab):**
+#### Medium Environment (Standard Deployment)
 ```yaml
 resources:
   medium:
@@ -792,7 +512,7 @@ resources:
       cpu: "1000m"
 ```
 
-**Production Requirements (Large Environment):**
+#### Large Environment (Enterprise)
 ```yaml
 resources:
   large:
@@ -810,30 +530,9 @@ resources:
       cpu: "2000m"
 ```
 
-### Scalability Architecture
+### Scaling Strategy
 
-#### Horizontal Scaling Strategy
-```
-Component Scaling Approach:
-├── Prometheus
-│   ├── Federation for Multi-Cluster
-│   ├── Sharding by Service/Namespace
-│   └── Remote Storage Integration
-├── Loki
-│   ├── Multi-Tenant Architecture
-│   ├── Distributed Query Engine
-│   └── Object Storage Scaling
-├── Tempo
-│   ├── Microservices Mode
-│   ├── Distributed Ingestion
-│   └── Scalable Query Frontend
-└── Grafana
-    ├── Database Backend Scaling
-    ├── Load Balancer Integration
-    └── Caching Layer Optimization
-```
-
-#### Auto-Scaling Configuration
+#### Horizontal Scaling
 ```yaml
 autoscaling:
   enabled: true
@@ -857,469 +556,33 @@ autoscaling:
 
 ---
 
-## 🔄 Integration Points
+## Security Considerations
 
-### CALO Lab Specific Integrations
-
-#### CXTAF (Test Automation Framework) Integration
-```
-CXTAF Integration Architecture:
-├── Auto-Discovery Mechanisms
-│   ├── Kubernetes Service Detection
-│   ├── Custom Annotation Scanning
-│   └── Dynamic Target Registration
-├── Metrics Collection
-│   ├── Test Execution Metrics
-│   ├── Device Connection Monitoring
-│   ├── Performance Benchmarking
-│   └── Resource Utilization Tracking
-├── Distributed Tracing
-│   ├── Test Workflow Tracing
-│   ├── API Call Correlation
-│   └── Performance Analysis
-└── Alert Integration
-    ├── Test Failure Notifications
-    ├── Performance Degradation Alerts
-    └── Resource Exhaustion Warnings
+### Authentication & Authorization
+```yaml
+# Kubernetes RBAC Integration
+security:
+  rbac:
+    enabled: true
+    serviceAccounts:
+      prometheus: prometheus-sa
+      grafana: grafana-sa
+      
+  networkPolicies:
+    enabled: true
+    ingress:
+      allowedNamespaces: ["ao-os"]
+      
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 2000
 ```
 
-#### CXTM (Workflow Management) Integration
-```
-CXTM Integration Architecture:
-├── Database Monitoring
-│   ├── MariaDB Performance Metrics
-│   ├── Redis Cache Monitoring
-│   └── Connection Pool Analysis
-├── Workflow Tracking
-│   ├── Active Workflow Monitoring
-│   ├── Completion Rate Analysis
-│   └── Error Rate Tracking
-├── Resource Monitoring
-│   ├── CPU/Memory Utilization
-│   ├── Network I/O Analysis
-│   └── Storage Performance
-└── Business Metrics
-    ├── Workflow Success Rates
-    ├── Processing Time Analysis
-    └── Queue Depth Monitoring
-```
-
-### External System Integration
-
-#### University Network Integration
-```
-Network Integration Points:
-├── UTA Network Monitoring
-│   ├── Campus Network Connectivity
-│   ├── Internet Gateway Performance
-│   └── Internal Service Reachability
-├── DNS Integration
-│   ├── Internal DNS Resolution
-│   ├── External DNS Performance
-│   └── DNS Failure Detection
-└── Security Integration
-    ├── Firewall Rule Monitoring
-    ├── VPN Connectivity Tracking
-    └── Network Security Alerts
-```
-
-#### Multi-Cloud Integration Support
-```
-Cloud Integration Architecture:
-├── AWS Integration
-│   ├── EKS Cluster Support
-│   ├── CloudWatch Metrics Bridge
-│   └── S3 Storage Backend
-├── GCP Integration
-│   ├── GKE Cluster Support
-│   ├── Cloud Monitoring Integration
-│   └── Cloud Storage Backend
-├── Azure Integration
-│   ├── AKS Cluster Support
-│   ├── Azure Monitor Bridge
-│   └── Blob Storage Backend
-└── On-Premises Integration
-    ├── VMware vSphere Support
-    ├── OpenStack Integration
-    └── Bare Metal Kubernetes
-```
+### Data Security
+- **Encryption at Rest**: Kubernetes secret management for sensitive configurations
+- **Encryption in Transit**: TLS for all inter-service communication  
+- **Access Control**: Kubernetes RBAC for all components
+- **Network Security**: Network policies for traffic isolation
 
 ---
-
-## 🛠️ Automation & DevOps
-
-### Deployment Automation
-
-#### Infrastructure as Code
-```
-Deployment Pipeline:
-├── Environment Detection
-│   ├── Cluster Capability Analysis
-│   ├── Storage Class Discovery
-│   └── Network Topology Assessment
-├── Dynamic Configuration
-│   ├── Values.yaml Generation
-│   ├── Resource Sizing Calculation
-│   └── Security Policy Application
-├── Helm Deployment
-│   ├── Chart Validation
-│   ├── Progressive Rollout
-│   └── Health Verification
-└── Post-Deployment Validation
-    ├── Service Health Checks
-    ├── Integration Testing
-    └── Performance Validation
-```
-
-#### CI/CD Integration
-```yaml
-# Example GitLab CI Pipeline
-stages:
-  - validate
-  - test
-  - deploy
-  - verify
-
-validate-chart:
-  stage: validate
-  script:
-    - helm lint ./helm-kube-observability-stack
-    - yamllint ./helm-kube-observability-stack/values.yaml
-
-test-deployment:
-  stage: test
-  script:
-    - ./install-observability-stack.sh test-stack test-ns test-env
-    - ./verify-installation.sh test-stack test-ns
-    - ./check-services.sh test-ns
-
-deploy-production:
-  stage: deploy
-  script:
-    - ./install-observability-stack.sh ao-observability ao-os calo_lab
-  only:
-    - main
-
-verify-production:
-  stage: verify
-  script:
-    - ./verify-installation.sh ao-observability ao-os
-    - ./check-services.sh ao-os
-```
-
-### Operational Procedures
-
-#### Backup & Recovery
-```
-Backup Strategy:
-├── Configuration Backup
-│   ├── Helm Values Export
-│   ├── Kubernetes Manifests
-│   └── Custom Configurations
-├── Data Backup
-│   ├── Prometheus TSDB Snapshots
-│   ├── Grafana Dashboard Export
-│   └── Alert Rule Backup
-├── Recovery Procedures
-│   ├── Disaster Recovery Playbook
-│   ├── Point-in-Time Recovery
-│   └── Cross-Environment Migration
-└── Testing & Validation
-    ├── Recovery Testing Schedule
-    ├── Backup Integrity Validation
-    └── RTO/RPO Measurement
-```
-
-#### Monitoring & Maintenance
-```
-Operational Monitoring:
-├── System Health Monitoring
-│   ├── Component Availability
-│   ├── Resource Utilization
-│   └── Performance Metrics
-├── Capacity Planning
-│   ├── Growth Trend Analysis
-│   ├── Resource Forecasting
-│   └── Scaling Recommendations
-├── Maintenance Procedures
-│   ├── Update Management
-│   ├── Security Patching
-│   └── Configuration Drift Detection
-└── Documentation
-    ├── Operational Runbooks
-    ├── Troubleshooting Guides
-    └── Knowledge Base Updates
-```
-
----
-
-## 🔍 Testing & Quality Assurance
-
-### Testing Strategy
-
-#### Unit Testing
-```
-Component Testing Approach:
-├── Helm Chart Testing
-│   ├── Template Validation
-│   ├── Value Override Testing
-│   └── Resource Generation Verification
-├── Configuration Testing
-│   ├── Prometheus Rule Validation
-│   ├── Grafana Dashboard Testing
-│   └── Alert Rule Verification
-└── Script Testing
-    ├── Shell Script Unit Tests
-    ├── Error Condition Testing
-    └── Edge Case Validation
-```
-
-#### Integration Testing
-```
-Integration Test Suite:
-├── Service-to-Service Communication
-│   ├── Prometheus ← Exporters
-│   ├── Grafana ← Datasources
-│   ├── Tempo ← Direct Ingestion
-│   └── AlertManager ← Prometheus
-├── Data Flow Validation
-│   ├── Metrics Collection Pipeline
-│   ├── Log Ingestion Pipeline
-│   ├── Trace Collection Pipeline
-│   └── Alert Delivery Pipeline
-├── Auto-Discovery Testing
-│   ├── Service Detection Validation
-│   ├── Dynamic Configuration Updates
-│   └── CXTAF/CXTM Integration
-└── Performance Testing
-    ├── Load Testing Scenarios
-    ├── Stress Testing Validation
-    └── Scalability Testing
-```
-
-#### Environment Testing
-```
-Multi-Environment Validation:
-├── CALO Lab Environment
-│   ├── Node Selector Validation
-│   ├── Storage Class Integration
-│   ├── Network Connectivity
-│   └── CXTAF/CXTM Discovery
-├── Cloud Environment Testing
-│   ├── AWS EKS Validation
-│   ├── GCP GKE Testing
-│   ├── Azure AKS Integration
-│   └── Multi-Cloud Compatibility
-├── On-Premises Testing
-│   ├── VMware Integration
-│   ├── OpenStack Compatibility
-│   └── Bare Metal Kubernetes
-└── Edge Case Scenarios
-    ├── Resource Constrained Environments
-    ├── Network Partition Scenarios
-    └── Storage Failure Recovery
-```
-
-### Quality Metrics
-
-#### Code Quality Standards
-```yaml
-quality_metrics:
-  helm_charts:
-    template_coverage: ">95%"
-    value_validation: "100%"
-    documentation: "Complete"
-    
-  scripts:
-    error_handling: "Comprehensive"
-    input_validation: "Complete"
-    logging: "Structured"
-    
-  documentation:
-    api_coverage: "100%"
-    examples: "Complete"
-    troubleshooting: "Comprehensive"
-```
-
----
-
-## 🔧 Troubleshooting & Diagnostics
-
-### CALO Lab Deployment Experience (Production Issues Resolved)
-
-#### Critical Configuration Issues Encountered
-
-**Revision 16 Deployment History:** The CALO lab deployment reached revision 16 through systematic resolution of multiple configuration issues:
-
-```
-CALO Lab Production Issues & Resolutions:
-├── YAML Configuration Errors
-│   ├── Alertmanager Route Structure
-│   │   ├── Problem: "yaml: line 30: did not find expected key"
-│   │   └── Solution: Fixed route indentation from malformed to 10-space alignment
-│   ├── Environment Name Format
-│   │   ├── Problem: "calo-lab" causing YAML key errors  
-│   │   └── Solution: Changed to "calo_lab" (underscore format)
-│   └── Duration Format Incompatibility
-│       ├── Problem: "7d" format causing tempo parsing errors
-│       └── Solution: Changed to Go duration format "168h"
-├── Container Image Issues
-│   ├── Jenkins Exporter Deprecation
-│   │   ├── Problem: "Pulling Schema 1 images have been deprecated"
-│   │   └── Solution: Disabled component (components.applications.jenkins: false)
-│   ├── Nginx Invalid Version
-│   │   ├── Problem: nginx:2.0.0 image not found
-│   │   └── Solution: Updated to nginx:1.24 (valid version)
-│   └── FastAPI Metrics Configuration
-│       ├── Problem: Deployment startup failures
-│       └── Solution: Disabled for current deployment
-├── Volume Permission Issues  
-│   ├── Grafana PVC Write Permissions
-│   │   ├── Problem: "GF_PATHS_DATA='/var/lib/grafana' is not writable"
-│   │   └── Solution: Added initContainer with proper securityContext (user 472)
-│   └── PVC Mounting Failures
-│       ├── Problem: Permission denied on data directories
-│       └── Solution: fsGroup and initContainer configuration
-├── Template Expression Failures
-│   ├── Complex Resource Templates
-│   │   ├── Problem: "unknown field spec.template.spec.containers[0].resources.sizing"
-│   │   └── Solution: Simplified to direct value references
-│   └── Boolean Template Issues
-│       ├── Problem: Template parsing errors in conditional blocks
-│       └── Solution: Fixed boolean expressions and conditional logic
-└── Namespace Template Conflicts
-    ├── Duplicate Namespace Creation
-    │   ├── Problem: Helm --create-namespace conflicts with template
-    │   └── Solution: Remove ./templates/000_namespace.yaml file
-```
-
-#### Production-Tested Solutions
-
-**Deployment Commands That Work:**
-```bash
-# Remove conflicting namespace template
-rm -f ./helm-kube-observability-stack/templates/000_namespace.yaml
-
-# Production deployment
-helm install ao-observability ./helm-kube-observability-stack --namespace ao-os --create-namespace
-
-# Configuration upgrades  
-helm upgrade ao-observability ./helm-kube-observability-stack --namespace ao-os
-```
-
-**Critical Values.yaml Fixes:**
-```yaml
-# Fixed configuration values
-environment:
-  name: "calo_lab"  # Underscore format (not "calo-lab")
-
-performance:
-  retention:
-    loki: "168h"    # Go duration format (not "7d")
-    tempo: "168h"   # Go duration format (not "7d")
-
-components:
-  applications:
-    jenkins: false  # Disabled problematic component
-    fastapi: false  # Disabled for current deployment
-
-image:
-  tag: "1.24"      # Valid nginx version (not "2.0.0")
-```
-
-### Common Issues & Resolutions
-
-#### Deployment Issues
-```
-Issue Resolution Matrix:
-├── Helm Chart Deployment Failures
-│   ├── Template Rendering Errors
-│   │   └── Solution: Validate values.yaml syntax
-│   ├── Resource Conflicts
-│   │   └── Solution: Namespace isolation verification
-│   └── RBAC Permission Issues
-│       └── Solution: Service account validation
-├── Pod Startup Failures
-│   ├── Image Pull Errors
-│   │   └── Solution: Registry access verification
-│   ├── Resource Constraints
-│   │   └── Solution: Resource limit adjustment
-│   └── Configuration Errors
-│       └── Solution: ConfigMap validation
-└── Service Discovery Issues
-    ├── Network Connectivity
-    │   └── Solution: DNS and network policy check
-    ├── Service Registration
-    │   └── Solution: Kubernetes API access validation
-    └── Auto-Discovery Failures
-        └── Solution: Annotation and label verification
-```
-
-#### Performance Issues
-```
-Performance Troubleshooting:
-├── High Memory Usage
-│   ├── Prometheus Memory Issues
-│   │   └── Solution: Retention policy adjustment
-│   ├── Grafana Memory Leaks
-│   │   └── Solution: Dashboard optimization
-│   └── Loki Memory Pressure
-│       └── Solution: Chunk size optimization
-├── High CPU Usage
-│   ├── Query Performance Issues
-│   │   └── Solution: Query optimization
-│   ├── Ingestion Bottlenecks
-│   │   └── Solution: Batch size tuning
-│   └── Processing Delays
-│       └── Solution: Pipeline optimization
-└── Storage Issues
-    ├── Disk Space Exhaustion
-    │   └── Solution: Retention policy adjustment
-    ├── I/O Performance
-    │   └── Solution: Storage class optimization
-    └── Volume Mounting Issues
-        └── Solution: PV/PVC validation
-```
-
-### Diagnostic Tools
-
-#### Built-in Diagnostics
-```bash
-# Comprehensive health check
-./check-services.sh ao-os
-
-# Detailed deployment verification  
-./verify-installation.sh ao-observability ao-os
-
-# Real-time monitoring
-kubectl get pods -n ao-os -w
-
-# Resource utilization
-kubectl top pods -n ao-os
-kubectl top nodes
-
-# Event analysis
-kubectl get events -n ao-os --sort-by=.metadata.creationTimestamp
-```
-
-#### Advanced Diagnostics
-```bash
-# Prometheus configuration validation
-kubectl exec -n ao-os prometheus-0 -- promtool config check /etc/prometheus/prometheus.yml
-
-# Loki configuration validation
-kubectl exec -n ao-os loki-0 -- /usr/bin/loki -config.file=/etc/loki/local-config.yaml -verify-config
-
-# Grafana datasource testing
-kubectl exec -n ao-os grafana-xxx -- curl -s http://prometheus:9090/api/v1/query?query=up
-
-# Network connectivity testing
-kubectl exec -n ao-os prometheus-0 -- wget -qO- http://node-exporter:9100/metrics | head
-
-# Check deployment status
-helm status ao-observability -n ao-os
-
-# List all services with NodePort access
-kubectl get svc -n ao-os | grep NodePort
-```
-
