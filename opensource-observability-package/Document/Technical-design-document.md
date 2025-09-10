@@ -8,9 +8,9 @@
 
 ---
 
-## Executive Summary
+## Summary
 
-The Enterprise Observability Stack is a comprehensive, infrastructure-agnostic monitoring solution designed to provide complete **Logs + Metrics + Traces (L.M.T)** observability for Kubernetes environments. This document outlines the technical architecture, design decisions, and implementation details of a production-ready observability platform that scales from basic monitoring to enterprise-grade operations.
+The Enterprise Observability Stack is a comprehensive, infrastructure monitoring solution designed to provide complete **Logs + Metrics + Traces (L.M.T)** observability for Kubernetes environments. This document outlines the technical architecture, design decisions, and implementation details of observability platform that scales from basic monitoring to enterprise-grade operations.
 
 ### Key Innovations
 
@@ -104,6 +104,7 @@ The complete observability platform includes the following components organized 
 | **Jenkins Exporter** | CI/CD Pipeline Metrics | Build status, queue depth, job performance | Jenkins |
 
 ---
+
 
 ## Data Flow Architecture
 
@@ -346,6 +347,71 @@ spec:
             port:
               number: 9090
 ```
+
+---
+
+## Observability Use Cases Coverage
+
+| Category | Sub-Category | Use Case | Description | Tool Identified |
+|----------|--------------|----------|-------------|-----------------|
+| **Infrastructure Monitoring** | Resource Utilization Tracking | Monitor CPU | Prevent system slowdowns and identify CPU bottlenecks or overprovisioned machines | Node Exporter + Prometheus |
+| | | Memory monitoring | Watch for apps using too much memory, which can lead to crashes or poor performance | Node Exporter + Prometheus |
+| | | Disk I/O monitoring | Check how fast data can be read/written from disk. Slow disk operations can affect app speed | Node Exporter + Prometheus |
+| | | System load across hosts, VMs, and containers | Measure how busy your systems are and whether they can handle current workload | Node Exporter + kube-state-metrics |
+| | Uptime and Availability | Uptime/Downtime | Check whether systems or apps are up and running. Helps in meeting SLAs and fixing problems early | Blackbox Exporter + Prometheus |
+| | | Host Availability | Makes sure all servers are online. Important for load balancing and backup systems | Node Exporter + Prometheus |
+| | Storage Monitoring | Disk Usage | Track how much storage is left. If full, it can crash apps or services | Node Exporter + Prometheus |
+| | | Storage Latency | See how fast your storage responds. Slow response affects apps and databases | Node Exporter + Prometheus |
+| | | Throughput | Measure how much data can move through storage systems efficiently | Node Exporter + Prometheus |
+| | Capacity Forecasting | Capacity Planning | Predict when you'll run out of CPU, memory, or storage, so you can plan ahead | Prometheus + Grafana Analytics |
+| | Infrastructure Alerting | CPU Alerts | Warn when CPU usage is too high (e.g., above 90%) | AlertManager + Prometheus |
+| | | Disk Alerts | Notify when disk is nearly full (e.g., over 80%) | AlertManager + Prometheus |
+| | | System down | Alert when a system goes offline or becomes unresponsive | AlertManager + Blackbox Exporter |
+| | | Container Alerts | Detect when containers crash or restart too often | AlertManager + kube-state-metrics |
+| **Application Monitoring** | Application Performance Monitoring (APM) | Monitor latency | Track how long requests take. High delays = bad user experience | Tempo + Grafana |
+| | | Monitor Throughput | See how many requests or users your app handles | FastAPI Metrics + Prometheus |
+| | | Monitor Error Rate | Watch for failed requests (e.g., 500 errors). High errors = app issues | Loki + Promtail + AlertManager |
+| | | API calls Volume | Track API call volumes and patterns | FastAPI Metrics + Prometheus |
+| | Distributed Tracing | Trace Requests Across Services | View request paths and timings across all services/components | Tempo + Grafana |
+| | | Log Correlation | Correlate traces with logs and metrics | Tempo + Loki + Grafana |
+| | Backend/Dependency Monitoring | Database Calls Monitoring | Ensure traces include visibility into DB calls and external API latency/errors | MongoDB/PostgreSQL/Redis Exporters |
+| | Application Alerting | Alert on High Latency | Notify when latency exceeds SLAs (e.g., >500ms for P95) | AlertManager + Tempo |
+| | | Alert on Error Rate Spikes | Alert when errors suddenly increase | AlertManager + Loki |
+| | | Custom Alert Conditions | Combine multiple checks like high CPU + slow response to trigger smarter alerts | AlertManager + Prometheus |
+| **Services Monitoring** | Service Health Checks | Monitor Service Endpoints | Ensures services are up and reachable from the network | Blackbox Exporter + Prometheus |
+| | | Check Response Codes | Validate expected HTTP status (200 vs 503) | Blackbox Exporter + Prometheus |
+| | | Latency and Payload Validation | Ensure responses are timely and content is valid | Blackbox Exporter + Tempo |
+| | Service Dependencies | Monitor Inter-Service Calls | Know which services depend on others to identify failure impact scope | Tempo + Grafana |
+| | | Dependency Maps/Graphs | Visualize service-to-service connections | Grafana + Tempo |
+| | | Identify Latency Sources | Find where time is spent across service chains | Tempo + Grafana |
+| | Service Availability | Track Uptime/Downtime | Know when services are unavailable and how often | Prometheus + Blackbox Exporter |
+| | | Rolling Availability Metrics | Track reliability over time (e.g., SLOs, 30-day windows) | Prometheus + Grafana |
+| | Alerting on Service Errors | Alert on 5xx Status Codes | Detect backend failures or application crashes | AlertManager + Blackbox Exporter |
+| | | Timeout and Latency Alerts | Prevent cascading slowdowns due to bottlenecks | AlertManager + Prometheus |
+| **Log Monitoring** | Log Collection | Collect Logs from Applications | Capture app-level logs like exceptions, debug messages | Promtail + Loki |
+| | | Collect Infrastructure Logs | Gather logs from servers, VMs, OS, etc. | Promtail + Loki |
+| | | Collect Container Logs | Collect logs from Docker, Kubernetes, etc. | Promtail + Loki |
+| | Centralized Logging | Centralized Log Aggregation | Send all logs to one searchable location | Loki + Grafana |
+| | Log Parsing & Enrichment | Parse Unstructured Logs | Extract fields like timestamp, error code, user ID | Promtail + Loki |
+| | | Log Enrichment | Add context like geo info, service tags, or severity | Promtail + Loki |
+| | Correlation | Log Correlation | Link logs to traces and metrics | Loki + Tempo + Prometheus |
+| | | Contextual Troubleshooting | Jump from alerts/traces to relevant logs | Grafana + Loki + Tempo |
+| | Alerting & Detection | Alert on Error Patterns | Detect known errors or recurring issues | AlertManager + Loki |
+| | | Alert on Volume Spikes | Detect unusual increases in log traffic | AlertManager + Loki |
+| **Network Monitoring** | Bandwidth Monitoring | Track Data In/Out Across Interfaces | Monitor inbound/outbound traffic, bandwidth usage, and peak utilization | Node Exporter + Prometheus |
+| | Latency & Packet Loss | Monitor RTT, Dropped Packets, Jitter | Track round-trip time, packet loss events, and latency variation across hops | Smokeping + MTR |
+| | DNS Monitoring | Track DNS Resolution Time & Failures | Measure DNS latency, lookup failures, and correlate DNS issues with service health | Blackbox Exporter + Prometheus |
+| | Topology Mapping | Visualize Network Relationships | Build visual maps of dependencies (switches, routers, paths, services) | MTR + Grafana |
+| | Alerting & Detection | High Latency, Link Failure Alerts | Create alert rules for RTT, DNS failure, packet drops, unreachable routes | AlertManager + Smokeping + MTR |
+| **Security Monitoring** | SSL/TLS Monitoring | SSL Certificate Expiry | Monitor SSL certificates before they expire | Blackbox Exporter + AlertManager |
+| | Authentication Events | Failed Login Tracking | Monitor authentication failures through application logs | Loki + Promtail + AlertManager |
+| **Database Monitoring** | Database Performance | Query Performance | Track database performance and slow queries | MongoDB/PostgreSQL Exporters + Prometheus |
+| | | Connection Health | Track database connection health and pool status | MongoDB/PostgreSQL/Redis Exporters |
+| | | Cache Performance | Monitor cache systems like Redis | Redis Exporter + Prometheus |
+| **Integration Monitoring** | CI/CD Pipeline | Build Pipeline Monitoring | Monitor build and deployment pipelines | Jenkins Exporter + Prometheus |
+| | API Gateway | API Performance | Monitor API gateway health and performance | Blackbox Exporter + FastAPI Metrics |
+| | Multi-Cloud | Cross-Cloud Monitoring | Monitor systems across different cloud providers | All Components (Infrastructure Agnostic) |
+
 
 ---
 
