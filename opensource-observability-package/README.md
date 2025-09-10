@@ -54,6 +54,21 @@ Replace `YOUR-NODE-IP` with your cluster node IP:
 | **🔧 Blackbox** | `http://YOUR-NODE-IP:30115` | 30115 | Endpoint monitoring |
 | **🌐 MTR** | `http://YOUR-NODE-IP:30808` | 30808 | Network diagnostics |
 
+
+## 🎯 **Use Cases Covered**
+
+### **Complete Observability Across 8 Categories**
+
+| **Category** | **Use Cases** | **What You Get** |
+|--------------|---------------|------------------|
+| **📊 Infrastructure** | **15+ cases** | CPU/memory monitoring, capacity planning, system alerts |
+| **📱 Application Performance** | **12+ cases** | Request tracing, error analysis, performance optimization |
+| **🔧 Services & Endpoints** | **10+ cases** | Health checks, dependency mapping, SLA monitoring |
+| **📝 Log Management** | **8+ cases** | Centralized logging, pattern detection, troubleshooting |
+| **🌐 Network Monitoring** | **8+ cases** | Latency tracking, path analysis, DNS performance |
+| **🔒 Security & Compliance** | **5+ cases** | Audit logging, SSL monitoring, compliance reporting |
+| **🗄️ Database Performance** | **6+ cases** | Query optimization, connection health, cache monitoring |
+| **🔄 DevOps & Integration** | **6+ cases** | CI/CD monitoring, API gateways, multi-cloud support |
 ## 🛠️ Management Commands
 
 ```bash
