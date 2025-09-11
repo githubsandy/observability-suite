@@ -17,12 +17,19 @@ spec:
     spec:
       containers:
       - name: mtr
-        image: {{ .Values.mtr.image }}
+        # Use Python Alpine image directly
+        image: python:3.12-alpine
         ports:
         - containerPort: 8080
           name: http
         command: ["/bin/sh"]
-        args: ["-c", "apk add --no-cache python3 && mkdir -p /data && echo 'MTR Network Diagnostics Service' > /data/index.html && echo 'MTR requires privileged access - configure as needed' > /data/mtr-info.txt && python3 -m http.server 8080 --directory /data"]
+        args:
+          - -c
+          - |
+            mkdir -p /data \
+            && echo 'MTR Network Diagnostics Service' > /data/index.html \
+            && echo 'MTR requires privileged access - configure as needed' > /data/mtr-info.txt \
+            && python3 -m http.server 8080 --directory /data
         resources:
           limits:
             cpu: {{ .Values.mtr.resources.limits.cpu }}

@@ -1,11 +1,11 @@
-# Enhanced Observability Stack - Architecture Overview
+# Enterprise Observability Stack - Architecture Overview
 
 **Complementary Document to Technical Design Document**  
 **Visual Architecture Reference**
 
 ---
 
-## 🏗️ System Architecture Diagrams
+## System Architecture Diagrams
 
 ### 1. High-Level Architecture Overview
 
@@ -358,7 +358,7 @@
 
 ---
 
-## 🔧 Component Interaction Diagrams
+## Component Interaction Diagrams
 
 ### 1. Metrics Collection Flow
 
@@ -447,12 +447,12 @@
 
 ---
 
-## 📊 Resource Architecture
+## Resource Architecture
 
 ### Kubernetes Resource Hierarchy
 
 ```
-Namespace: ao
+Namespace: ao-os
 ├── Core Observability
 │   ├── Prometheus
 │   │   ├── Deployment: prometheus
@@ -521,12 +521,12 @@ Namespace: ao
 
 ---
 
-## 🎯 Integration Points
+## Integration Points
 
 ### External System Integrations
 
 ```
-Enhanced Observability Stack
+Enterprise Observability Stack
             │
             ├─ CALO Lab Infrastructure
             │  ├─ CXTAF Framework
