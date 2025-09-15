@@ -123,59 +123,14 @@ data:
     apiVersion: 1
     groups:
     - orgId: 1
-      name: kubernetes-infrastructure
-      folder: Infrastructure
+      name: basic-alerts
+      folder: Basic Monitoring
       interval: 1m
       rules:
-{{- if .Values.alerting.rules.infrastructure.enabled }}
-      # Pod Crash Looping
-      - uid: pod-crash-looping
-        title: Pod Crash Looping
-        condition: C
-        data:
-        - refId: A
-          queryType: ''
-          relativeTimeRange:
-            from: 3600
-            to: 0
-          datasource:
-            type: prometheus
-            uid: prometheus
-          model:
-            expr: increase(kube_pod_container_status_restarts_total[1h]) > {{ .Values.alerting.rules.infrastructure.pod_crash_threshold | default 5 }}
-            refId: A
-        - refId: C
-          queryType: ''
-          datasource:
-            type: __expr__
-            uid: __expr__
-          model:
-            conditions:
-            - evaluator:
-                params: [0]
-                type: gt
-              operator:
-                type: and
-              query:
-                params: [A]
-              reducer:
-                type: last
-              type: query
-            expression: A
-            refId: C
-        noDataState: NoData
-        execErrState: Alerting
-        for: 2m
-        annotations:
-          summary: "Pod {{ "{{ $labels.pod }}" }} is crash looping"
-          description: "Pod {{ "{{ $labels.pod }}" }} in namespace {{ "{{ $labels.namespace }}" }} has restarted {{ "{{ $value }}" }} times in the last hour"
-        labels:
-          severity: critical
-
-      # High Memory Usage
-      - uid: container-high-memory
-        title: Container High Memory Usage
-        condition: C
+      # Simple Node Down Alert
+      - uid: node-down-simple
+        title: Node Down
+        condition: A
         data:
         - refId: A
           queryType: ''
@@ -186,73 +141,26 @@ data:
             type: prometheus
             uid: prometheus
           model:
-            expr: (container_memory_usage_bytes{name!="",name!="POD"} / container_spec_memory_limit_bytes) > {{ .Values.alerting.rules.infrastructure.memory_threshold | default 0.9 }}
-            refId: A
-        - refId: C
-          queryType: ''
-          datasource:
-            type: __expr__
-            uid: __expr__
-          model:
-            expression: A
-            refId: C
-        noDataState: NoData
-        execErrState: Alerting
-        for: 5m
-        annotations:
-          summary: "Container memory usage is high"
-          description: "Container {{ "{{ $labels.name }}" }} in pod {{ "{{ $labels.pod }}" }} memory usage is above {{ .Values.alerting.rules.infrastructure.memory_threshold | default 0.9 | mul 100 }}%"
-        labels:
-          severity: warning
-
-      # Node Down
-      - uid: node-down
-        title: Node Down
-        condition: C
-        data:
-        - refId: A
-          queryType: ''
-          relativeTimeRange:
-            from: 60
-            to: 0
-          datasource:
-            type: prometheus
-            uid: prometheus
-          model:
             expr: up{job="node-exporter"} == 0
             refId: A
-        - refId: C
-          queryType: ''
-          datasource:
-            type: __expr__
-            uid: __expr__
-          model:
-            expression: A
-            refId: C
         noDataState: NoData
         execErrState: Alerting
-        for: 1m
+        for: 2m
         annotations:
           summary: "Node is down"
-          description: "Node {{ "{{ $labels.instance }}" }} has been down for more than 1 minute"
+          description: "Node {{ "{{ $labels.instance }}" }} has been down for more than 2 minutes"
         labels:
           severity: critical
-{{- end }}
 
-    - orgId: 1
-      name: observability-stack
-      folder: Observability
-      interval: 1m
-      rules:
-      # Prometheus Down
-      - uid: prometheus-down
+      # Simple Prometheus Down Alert
+      - uid: prometheus-down-simple
         title: Prometheus Down
-        condition: C
+        condition: A
         data:
         - refId: A
           queryType: ''
           relativeTimeRange:
-            from: 60
+            from: 300
             to: 0
           datasource:
             type: prometheus
@@ -260,53 +168,37 @@ data:
           model:
             expr: up{job="prometheus"} == 0
             refId: A
-        - refId: C
-          queryType: ''
-          datasource:
-            type: __expr__
-            uid: __expr__
-          model:
-            expression: A
-            refId: C
         noDataState: NoData
         execErrState: Alerting
         for: 1m
         annotations:
           summary: "Prometheus is down"
-          description: "Prometheus server is down on {{ "{{ $labels.instance }}" }}"
+          description: "Prometheus server is not responding"
         labels:
           severity: critical
 
-      # Grafana Down (self-monitoring)
-      - uid: grafana-down
-        title: Grafana Down
-        condition: C
+      # Simple High CPU Alert
+      - uid: high-cpu-simple
+        title: High CPU Usage
+        condition: A
         data:
         - refId: A
           queryType: ''
           relativeTimeRange:
-            from: 60
+            from: 600
             to: 0
           datasource:
             type: prometheus
             uid: prometheus
           model:
-            expr: up{job="grafana"} == 0
+            expr: (100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)) > 80
             refId: A
-        - refId: C
-          queryType: ''
-          datasource:
-            type: __expr__
-            uid: __expr__
-          model:
-            expression: A
-            refId: C
         noDataState: NoData
         execErrState: Alerting
-        for: 1m
+        for: 5m
         annotations:
-          summary: "Grafana is down"
-          description: "Grafana server is down on {{ "{{ $labels.instance }}" }}"
+          summary: "High CPU usage detected"
+          description: "CPU usage is above 80% on {{ "{{ $labels.instance }}" }}"
         labels:
-          severity: critical
+          severity: warning
 {{- end }}
