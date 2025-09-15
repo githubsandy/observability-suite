@@ -28,13 +28,11 @@ spec:
         - name: GF_SECURITY_ADMIN_PASSWORD
           value: {{ .Values.grafana.adminPassword }}
 {{- if .Values.notifications.grafana_alerting.enabled }}
-        # Enable Grafana Alerting
-        - name: GF_ALERTING_ENABLED
-          value: "true"
+        # Enable Grafana Unified Alerting (disable legacy alerting)
         - name: GF_UNIFIED_ALERTING_ENABLED
           value: "true"
-        - name: GF_ALERTING_EXECUTE_ALERTS
-          value: "true"
+        - name: GF_ALERTING_ENABLED
+          value: "false"
         # SMTP disabled - no email notifications
 {{- end }}
         resources:
