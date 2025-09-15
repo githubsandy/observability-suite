@@ -64,50 +64,41 @@ data:
     apiVersion: 1
     policies:
     - orgId: 1
-      receiver: default-notification
       group_by: ['alertname', 'namespace']
       group_wait: 30s
       group_interval: 5m
       repeat_interval: 4h
 
       routes:
-      # Critical alerts: All enabled channels (ServiceNow + WebEx)
+{{- if .Values.notifications.servicenow.enabled }}
+      # Critical alerts: ServiceNow + WebEx (if enabled)
       - matchers:
         - severity = critical
-        receiver: critical-all-channels
+        contact_points:
+        - servicenow-webhook
+{{- if .Values.notifications.webex.enabled }}
+        - webex-webhook
+{{- end }}
         group_wait: 10s
         repeat_interval: 1h
+{{- else if .Values.notifications.webex.enabled }}
+      # Critical alerts: WebEx only
+      - matchers:
+        - severity = critical
+        contact_points:
+        - webex-webhook
+        group_wait: 10s
+        repeat_interval: 1h
+{{- end }}
 
+{{- if .Values.notifications.webex.enabled }}
       # Warning alerts: WebEx only (no ServiceNow incidents for warnings)
       - matchers:
         - severity = warning
-        receiver: warning-notifications
+        contact_points:
+        - webex-webhook
         repeat_interval: 2h
-
-    # Define notification receivers (groups of contact points)
-{{- if or .Values.notifications.servicenow.enabled .Values.notifications.webex.enabled }}
-    - orgId: 1
-      receiver: critical-all-channels
-      contact_points:
-{{- if .Values.notifications.servicenow.enabled }}
-      - servicenow-webhook
 {{- end }}
-{{- if .Values.notifications.webex.enabled }}
-      - webex-webhook
-{{- end }}
-{{- end }}
-
-{{- if .Values.notifications.webex.enabled }}
-    - orgId: 1
-      receiver: warning-notifications
-      contact_points:
-      - webex-webhook
-{{- end }}
-
-    # Default fallback (log only if no notifications enabled)
-    - orgId: 1
-      receiver: default-notification
-      contact_points: []
 
 # SMTP Configuration removed - email notifications disabled
 
