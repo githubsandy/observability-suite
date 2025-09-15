@@ -85,7 +85,7 @@ data:
         repeat_interval: 2h
 
     # Define notification receivers (groups of contact points)
-{{- if .Values.notifications.servicenow.enabled or .Values.notifications.webex.enabled }}
+{{- if or .Values.notifications.servicenow.enabled .Values.notifications.webex.enabled }}
     - orgId: 1
       receiver: critical-all-channels
       contact_points:
