@@ -50,8 +50,7 @@ data:
                 # Create ServiceNow incident payload
                 incident_data = {
                     'short_description': f"🚨 Observability Alert: {alert_name}",
-                    'description': f"""
-Alert Details:
+                    'description': f"""Alert Details:
 - Summary: {alert_name}
 - Description: {description}
 - Instance: {instance}
@@ -61,9 +60,9 @@ Alert Details:
 - Generator URL: {alert.get('generatorURL', '')}
 
 This incident was automatically created by the Observability Suite AlertManager.
-Dashboard: http://{{ .Values.notifications.grafana_url }}
-Prometheus: http://{{ .Values.notifications.prometheus_url }}
-                    """,
+Dashboard: http://""" + "{{ .Values.notifications.grafana_url }}" + f"""
+Prometheus: http://""" + "{{ .Values.notifications.prometheus_url }}" + """
+""",
                     'priority': priority_map.get(severity, '4'),
                     'category': 'Infrastructure',
                     'subcategory': 'Monitoring',
