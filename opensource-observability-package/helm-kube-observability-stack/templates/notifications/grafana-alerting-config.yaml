@@ -1,0 +1,327 @@
+{{- if .Values.notifications.grafana_alerting.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-alerting-provisioning
+  namespace: {{ .Values.namespace }}
+data:
+  # Grafana Alerting Contact Points Configuration
+  contactpoints.yaml: |
+    apiVersion: 1
+    contactPoints:
+
+{{- if .Values.notifications.servicenow.enabled }}
+    # ServiceNow Webhook Contact Point
+    - orgId: 1
+      name: servicenow-webhook
+      receivers:
+      - uid: servicenow-webhook-uid
+        type: webhook
+        settings:
+          url: http://{{ .Values.notifications.node_ip }}:30950/create-incident
+          httpMethod: POST
+          username: {{ .Values.notifications.servicenow.username }}
+          password: {{ .Values.notifications.servicenow.password }}
+          title: "Critical Alert: {{ "{{ $labels.alertname }}" }}"
+          message: |
+            {
+              "alert_name": "{{ "{{ $labels.alertname }}" }}",
+              "summary": "{{ "{{ $annotations.summary }}" }}",
+              "description": "{{ "{{ $annotations.description }}" }}",
+              "instance": "{{ "{{ $labels.instance }}" }}",
+              "namespace": "{{ "{{ $labels.namespace }}" }}",
+              "severity": "{{ "{{ $labels.severity }}" }}",
+              "started_at": "{{ "{{ $labels.__alert_time__ }}" }}",
+              "grafana_url": "http://{{ .Values.notifications.node_ip }}:30300"
+            }
+{{- end }}
+
+{{- if .Values.notifications.webex.enabled }}
+    # WebEx Teams Webhook Contact Point
+    - orgId: 1
+      name: webex-webhook
+      receivers:
+      - uid: webex-webhook-uid
+        type: webhook
+        settings:
+          url: http://{{ .Values.notifications.node_ip }}:30951/webex-webhook
+          httpMethod: POST
+          title: "{{ "{{ $labels.severity | upper }}" }}: {{ "{{ $labels.alertname }}" }}"
+          message: |
+            {
+              "alert_name": "{{ "{{ $labels.alertname }}" }}",
+              "summary": "{{ "{{ $annotations.summary }}" }}",
+              "description": "{{ "{{ $annotations.description }}" }}",
+              "instance": "{{ "{{ $labels.instance }}" }}",
+              "namespace": "{{ "{{ $labels.namespace }}" }}",
+              "severity": "{{ "{{ $labels.severity }}" }}",
+              "started_at": "{{ "{{ $labels.__alert_time__ }}" }}"
+            }
+{{- end }}
+
+  # Grafana Notification Policies Configuration
+  policies.yaml: |
+    apiVersion: 1
+    policies:
+    - orgId: 1
+      receiver: default-notification
+      group_by: ['alertname', 'namespace']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+
+      routes:
+      # Critical alerts: All enabled channels (ServiceNow + WebEx)
+      - matchers:
+        - severity = critical
+        receiver: critical-all-channels
+        group_wait: 10s
+        repeat_interval: 1h
+
+      # Warning alerts: WebEx only (no ServiceNow incidents for warnings)
+      - matchers:
+        - severity = warning
+        receiver: warning-notifications
+        repeat_interval: 2h
+
+    # Define notification receivers (groups of contact points)
+{{- if .Values.notifications.servicenow.enabled or .Values.notifications.webex.enabled }}
+    - orgId: 1
+      receiver: critical-all-channels
+      contact_points:
+{{- if .Values.notifications.servicenow.enabled }}
+      - servicenow-webhook
+{{- end }}
+{{- if .Values.notifications.webex.enabled }}
+      - webex-webhook
+{{- end }}
+{{- end }}
+
+{{- if .Values.notifications.webex.enabled }}
+    - orgId: 1
+      receiver: warning-notifications
+      contact_points:
+      - webex-webhook
+{{- end }}
+
+    # Default fallback (log only if no notifications enabled)
+    - orgId: 1
+      receiver: default-notification
+      contact_points: []
+
+# SMTP Configuration removed - email notifications disabled
+
+---
+# Grafana Alerting Rules Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-alert-rules
+  namespace: {{ .Values.namespace }}
+data:
+  rules.yaml: |
+    apiVersion: 1
+    groups:
+    - orgId: 1
+      name: kubernetes-infrastructure
+      folder: Infrastructure
+      interval: 1m
+      rules:
+{{- if .Values.alerting.rules.infrastructure.enabled }}
+      # Pod Crash Looping
+      - uid: pod-crash-looping
+        title: Pod Crash Looping
+        condition: C
+        data:
+        - refId: A
+          queryType: ''
+          relativeTimeRange:
+            from: 3600
+            to: 0
+          datasource:
+            type: prometheus
+            uid: prometheus
+          model:
+            expr: increase(kube_pod_container_status_restarts_total[1h]) > {{ .Values.alerting.rules.infrastructure.pod_crash_threshold | default 5 }}
+            refId: A
+        - refId: C
+          queryType: ''
+          relativeTimeRange:
+            from: 0
+            to: 0
+          datasource:
+            type: __expr__
+            uid: __expr__
+          model:
+            conditions:
+            - evaluator:
+                params: [0]
+                type: gt
+              operator:
+                type: and
+              query:
+                params: [A]
+              reducer:
+                type: last
+              type: query
+            expression: A
+            refId: C
+        noDataState: NoData
+        execErrState: Alerting
+        for: 2m
+        annotations:
+          summary: "Pod {{ "{{ $labels.pod }}" }} is crash looping"
+          description: "Pod {{ "{{ $labels.pod }}" }} in namespace {{ "{{ $labels.namespace }}" }} has restarted {{ "{{ $value }}" }} times in the last hour"
+        labels:
+          severity: critical
+
+      # High Memory Usage
+      - uid: container-high-memory
+        title: Container High Memory Usage
+        condition: C
+        data:
+        - refId: A
+          queryType: ''
+          relativeTimeRange:
+            from: 300
+            to: 0
+          datasource:
+            type: prometheus
+            uid: prometheus
+          model:
+            expr: (container_memory_usage_bytes{name!="",name!="POD"} / container_spec_memory_limit_bytes) > {{ .Values.alerting.rules.infrastructure.memory_threshold | default 0.9 }}
+            refId: A
+        - refId: C
+          queryType: ''
+          relativeTimeRange:
+            from: 0
+            to: 0
+          datasource:
+            type: __expr__
+            uid: __expr__
+          model:
+            expression: A
+            refId: C
+        noDataState: NoData
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          summary: "Container memory usage is high"
+          description: "Container {{ "{{ $labels.name }}" }} in pod {{ "{{ $labels.pod }}" }} memory usage is above {{ .Values.alerting.rules.infrastructure.memory_threshold | default 0.9 | mul 100 }}%"
+        labels:
+          severity: warning
+
+      # Node Down
+      - uid: node-down
+        title: Node Down
+        condition: C
+        data:
+        - refId: A
+          queryType: ''
+          relativeTimeRange:
+            from: 60
+            to: 0
+          datasource:
+            type: prometheus
+            uid: prometheus
+          model:
+            expr: up{job="node-exporter"} == 0
+            refId: A
+        - refId: C
+          queryType: ''
+          relativeTimeRange:
+            from: 0
+            to: 0
+          datasource:
+            type: __expr__
+            uid: __expr__
+          model:
+            expression: A
+            refId: C
+        noDataState: NoData
+        execErrState: Alerting
+        for: 1m
+        annotations:
+          summary: "Node is down"
+          description: "Node {{ "{{ $labels.instance }}" }} has been down for more than 1 minute"
+        labels:
+          severity: critical
+{{- end }}
+
+    - orgId: 1
+      name: observability-stack
+      folder: Observability
+      interval: 1m
+      rules:
+      # Prometheus Down
+      - uid: prometheus-down
+        title: Prometheus Down
+        condition: C
+        data:
+        - refId: A
+          queryType: ''
+          relativeTimeRange:
+            from: 60
+            to: 0
+          datasource:
+            type: prometheus
+            uid: prometheus
+          model:
+            expr: up{job="prometheus"} == 0
+            refId: A
+        - refId: C
+          queryType: ''
+          relativeTimeRange:
+            from: 0
+            to: 0
+          datasource:
+            type: __expr__
+            uid: __expr__
+          model:
+            expression: A
+            refId: C
+        noDataState: NoData
+        execErrState: Alerting
+        for: 1m
+        annotations:
+          summary: "Prometheus is down"
+          description: "Prometheus server is down on {{ "{{ $labels.instance }}" }}"
+        labels:
+          severity: critical
+
+      # Grafana Down (self-monitoring)
+      - uid: grafana-down
+        title: Grafana Down
+        condition: C
+        data:
+        - refId: A
+          queryType: ''
+          relativeTimeRange:
+            from: 60
+            to: 0
+          datasource:
+            type: prometheus
+            uid: prometheus
+          model:
+            expr: up{job="grafana"} == 0
+            refId: A
+        - refId: C
+          queryType: ''
+          relativeTimeRange:
+            from: 0
+            to: 0
+          datasource:
+            type: __expr__
+            uid: __expr__
+          model:
+            expression: A
+            refId: C
+        noDataState: NoData
+        execErrState: Alerting
+        for: 1m
+        annotations:
+          summary: "Grafana is down"
+          description: "Grafana server is down on {{ "{{ $labels.instance }}" }}"
+        labels:
+          severity: critical
+{{- end }}

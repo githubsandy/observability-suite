@@ -1,0 +1,181 @@
+{{- if .Values.notifications.servicenow.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: servicenow-webhook-config
+  namespace: {{ .Values.namespace }}
+data:
+  servicenow-webhook.py: |
+    #!/usr/bin/env python3
+    """
+    ServiceNow Incident Creation Webhook for AlertManager
+    Receives AlertManager webhooks and creates ServiceNow incidents
+    """
+    from flask import Flask, request, jsonify
+    import requests
+    import json
+    import logging
+    from datetime import datetime
+
+    app = Flask(__name__)
+    logging.basicConfig(level=logging.INFO)
+
+    # ServiceNow Configuration (from environment/values)
+    SERVICENOW_INSTANCE = "{{ .Values.notifications.servicenow.instance }}"
+    SERVICENOW_USERNAME = "{{ .Values.notifications.servicenow.username }}"
+    SERVICENOW_PASSWORD = "{{ .Values.notifications.servicenow.password }}"
+    SERVICENOW_TABLE = "{{ .Values.notifications.servicenow.table | default "incident" }}"
+
+    @app.route('/create-incident', methods=['POST'])
+    def create_incident():
+        """Create ServiceNow incident from AlertManager webhook"""
+        try:
+            alert_data = request.get_json()
+
+            for alert in alert_data.get('alerts', []):
+                # Extract alert information
+                alert_name = alert['annotations'].get('summary', 'Unknown Alert')
+                description = alert['annotations'].get('description', '')
+                severity = alert['labels'].get('severity', 'info')
+                instance = alert['labels'].get('instance', 'Unknown')
+                namespace = alert['labels'].get('namespace', 'default')
+
+                # Map Prometheus severity to ServiceNow priority
+                priority_map = {
+                    'critical': '1',  # P1 - Critical
+                    'warning': '3',   # P3 - Moderate
+                    'info': '4'       # P4 - Low
+                }
+
+                # Create ServiceNow incident payload
+                incident_data = {
+                    'short_description': f"🚨 Observability Alert: {alert_name}",
+                    'description': f"""
+Alert Details:
+- Summary: {alert_name}
+- Description: {description}
+- Instance: {instance}
+- Namespace: {namespace}
+- Severity: {severity}
+- Started: {alert.get('startsAt', 'Unknown')}
+- Generator URL: {alert.get('generatorURL', '')}
+
+This incident was automatically created by the Observability Suite AlertManager.
+Dashboard: http://{{ .Values.notifications.grafana_url | default "YOUR-NODE-IP:30300" }}
+Prometheus: http://{{ .Values.notifications.prometheus_url | default "YOUR-NODE-IP:30090" }}
+                    """,
+                    'priority': priority_map.get(severity, '4'),
+                    'category': 'Infrastructure',
+                    'subcategory': 'Monitoring',
+                    'assignment_group': '{{ .Values.notifications.servicenow.assignment_group | default "IT Operations" }}',
+                    'caller_id': '{{ .Values.notifications.servicenow.caller_id | default "system.observability" }}',
+                    'u_source': 'Kubernetes Observability Stack'
+                }
+
+                # Create incident in ServiceNow
+                url = f"https://{SERVICENOW_INSTANCE}/api/now/table/{SERVICENOW_TABLE}"
+                headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+
+                response = requests.post(
+                    url,
+                    auth=(SERVICENOW_USERNAME, SERVICENOW_PASSWORD),
+                    headers=headers,
+                    data=json.dumps(incident_data)
+                )
+
+                if response.status_code == 201:
+                    incident = response.json()['result']
+                    logging.info(f"Created ServiceNow incident: {incident['number']}")
+                else:
+                    logging.error(f"Failed to create incident: {response.text}")
+
+            return jsonify({'status': 'success', 'message': 'Incidents processed'})
+
+        except Exception as e:
+            logging.error(f"Error processing webhook: {str(e)}")
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+
+    @app.route('/health', methods=['GET'])
+    def health():
+        return jsonify({'status': 'healthy'})
+
+    if __name__ == '__main__':
+        app.run(host='0.0.0.0', port=8080, debug=False)
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: servicenow-webhook-processor
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: servicenow-webhook-processor
+  template:
+    metadata:
+      labels:
+        app: servicenow-webhook-processor
+    spec:
+      containers:
+      - name: servicenow-webhook
+        image: python:3.9-slim
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          pip install flask requests
+          python /app/servicenow-webhook.py
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: webhook-script
+          mountPath: /app
+        env:
+        - name: SERVICENOW_INSTANCE
+          value: "{{ .Values.notifications.servicenow.instance }}"
+        - name: SERVICENOW_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: servicenow-credentials
+              key: username
+        - name: SERVICENOW_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: servicenow-credentials
+              key: password
+      volumes:
+      - name: webhook-script
+        configMap:
+          name: servicenow-webhook-config
+          defaultMode: 0755
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: servicenow-webhook-processor
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: servicenow-webhook-processor
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30950  # Direct IP access for ServiceNow webhook
+  type: NodePort
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: servicenow-credentials
+  namespace: {{ .Values.namespace }}
+type: Opaque
+data:
+  username: {{ .Values.notifications.servicenow.username | b64enc }}
+  password: {{ .Values.notifications.servicenow.password | b64enc }}
+{{- end }}
