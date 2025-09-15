@@ -191,7 +191,7 @@ if [ "$SERVICENOW_ENABLED" = "true" ]; then
     echo -e "${CYAN}🎫 Configuring ServiceNow integration: ${SERVICENOW_INSTANCE}${NC}"
     sed -i.tmp "/servicenow:/,/^  [a-zA-Z]/ {
         s/enabled: false  # Set to true to enable ServiceNow integration/enabled: true/
-        s/instance: \"your-instance.service-now.com\"/instance: \"$SERVICENOW_INSTANCE\"/
+        s|instance: \"your-instance.service-now.com\"|instance: \"$SERVICENOW_INSTANCE\"|
         s/username: \"servicenow_user\"/username: \"$SERVICENOW_USERNAME\"/
         s/password: \"servicenow_password\"/password: \"$SERVICENOW_PASSWORD\"/
         s/assignment_group: \"IT Operations\"/assignment_group: \"$SERVICENOW_ASSIGNMENT_GROUP\"/
