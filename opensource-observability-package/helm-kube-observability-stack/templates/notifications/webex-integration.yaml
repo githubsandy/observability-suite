@@ -128,12 +128,12 @@ data:
                 {
                     "type": "Action.OpenUrl",
                     "title": "📊 Open Grafana",
-                    "url": f"http://{{ .Values.notifications.grafana_url | default 'YOUR-NODE-IP:30300' }}"
+                    "url": f"http://{{ .Values.notifications.grafana_url }}"
                 },
                 {
                     "type": "Action.OpenUrl",
                     "title": "🔍 Open Prometheus",
-                    "url": f"http://{{ .Values.notifications.prometheus_url | default 'YOUR-NODE-IP:30090' }}"
+                    "url": f"http://{{ .Values.notifications.prometheus_url }}"
                 }
             ]
         }

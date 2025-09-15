@@ -62,8 +62,8 @@ data:
                 {{ end }}
 
                 <div style="text-align: center; margin: 20px 0;">
-                    <a href="http://{{ $.Values.notifications.grafana_url | default "YOUR-NODE-IP:30300" }}" class="btn">📊 Open Grafana Dashboard</a>
-                    <a href="http://{{ $.Values.notifications.prometheus_url | default "YOUR-NODE-IP:30090" }}" class="btn">🔍 Open Prometheus</a>
+                    <a href="http://{{ $.Values.notifications.grafana_url }}" class="btn">📊 Open Grafana Dashboard</a>
+                    <a href="http://{{ $.Values.notifications.prometheus_url }}" class="btn">🔍 Open Prometheus</a>
                 </div>
             </div>
 
@@ -131,7 +131,7 @@ data:
                 {{ end }}
 
                 <div style="text-align: center; margin: 20px 0;">
-                    <a href="http://{{ $.Values.notifications.grafana_url | default "YOUR-NODE-IP:30300" }}" class="btn">📊 Dashboard</a>
+                    <a href="http://{{ $.Values.notifications.grafana_url }}" class="btn">📊 Dashboard</a>
                 </div>
             </div>
 

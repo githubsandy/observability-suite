@@ -61,8 +61,8 @@ Alert Details:
 - Generator URL: {alert.get('generatorURL', '')}
 
 This incident was automatically created by the Observability Suite AlertManager.
-Dashboard: http://{{ .Values.notifications.grafana_url | default "YOUR-NODE-IP:30300" }}
-Prometheus: http://{{ .Values.notifications.prometheus_url | default "YOUR-NODE-IP:30090" }}
+Dashboard: http://{{ .Values.notifications.grafana_url }}
+Prometheus: http://{{ .Values.notifications.prometheus_url }}
                     """,
                     'priority': priority_map.get(severity, '4'),
                     'category': 'Infrastructure',
