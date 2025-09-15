@@ -146,9 +146,6 @@ data:
             refId: A
         - refId: C
           queryType: ''
-          relativeTimeRange:
-            from: 0
-            to: 0
           datasource:
             type: __expr__
             uid: __expr__
@@ -193,9 +190,6 @@ data:
             refId: A
         - refId: C
           queryType: ''
-          relativeTimeRange:
-            from: 0
-            to: 0
           datasource:
             type: __expr__
             uid: __expr__
@@ -229,9 +223,6 @@ data:
             refId: A
         - refId: C
           queryType: ''
-          relativeTimeRange:
-            from: 0
-            to: 0
           datasource:
             type: __expr__
             uid: __expr__
@@ -271,9 +262,6 @@ data:
             refId: A
         - refId: C
           queryType: ''
-          relativeTimeRange:
-            from: 0
-            to: 0
           datasource:
             type: __expr__
             uid: __expr__
@@ -307,9 +295,6 @@ data:
             refId: A
         - refId: C
           queryType: ''
-          relativeTimeRange:
-            from: 0
-            to: 0
           datasource:
             type: __expr__
             uid: __expr__
