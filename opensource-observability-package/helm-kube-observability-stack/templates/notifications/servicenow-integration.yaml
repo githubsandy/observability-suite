@@ -91,11 +91,11 @@ Prometheus: http://""" + "{{ .Values.notifications.prometheus_url }}" + """
                 else:
                     logging.error(f"Failed to create incident: {response.text}")
 
-            return jsonify({'status': 'success', 'message': 'Incidents processed'})
+        return jsonify({'status': 'success', 'message': 'Incidents processed'})
 
-        except Exception as e:
-            logging.error(f"Error processing webhook: {str(e)}")
-            return jsonify({'status': 'error', 'message': str(e)}), 500
+    except Exception as e:
+        logging.error(f"Error processing webhook: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
     @app.route('/health', methods=['GET'])
     def health():
