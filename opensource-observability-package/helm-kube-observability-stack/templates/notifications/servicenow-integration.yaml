@@ -48,28 +48,28 @@ data:
                 }
 
                 # Create ServiceNow incident payload
-                incident_data = {
-                    'short_description': "🚨 Observability Alert: " + alert_name,
-                    'description': """Alert Details:
-- Summary: """ + alert_name + """
-- Description: """ + description + """
-- Instance: """ + instance + """
-- Namespace: """ + namespace + """
-- Severity: """ + severity + """
-- Started: """ + str(alert.get('startsAt', 'Unknown')) + """
-- Generator URL: """ + str(alert.get('generatorURL', '')) + """
+                incident_data = {}
+                incident_data['short_description'] = "🚨 Observability Alert: " + alert_name
 
-This incident was automatically created by the Observability Suite AlertManager.
-Dashboard: http://{{ .Values.notifications.grafana_url }}
-Prometheus: http://{{ .Values.notifications.prometheus_url }}
-""",
-                    'priority': priority_map.get(severity, '4'),
-                    'category': 'Infrastructure',
-                    'subcategory': 'Monitoring',
-                    'assignment_group': '{{ .Values.notifications.servicenow.assignment_group | default "IT Operations" }}',
-                    'caller_id': '{{ .Values.notifications.servicenow.caller_id | default "system.observability" }}',
-                    'u_source': 'Kubernetes Observability Stack'
-                }
+                alert_details = "Alert Details:\n"
+                alert_details += "- Summary: " + alert_name + "\n"
+                alert_details += "- Description: " + description + "\n"
+                alert_details += "- Instance: " + instance + "\n"
+                alert_details += "- Namespace: " + namespace + "\n"
+                alert_details += "- Severity: " + severity + "\n"
+                alert_details += "- Started: " + str(alert.get('startsAt', 'Unknown')) + "\n"
+                alert_details += "- Generator URL: " + str(alert.get('generatorURL', '')) + "\n\n"
+                alert_details += "This incident was automatically created by the Observability Suite AlertManager.\n"
+                alert_details += "Dashboard: http://{{ .Values.notifications.grafana_url }}\n"
+                alert_details += "Prometheus: http://{{ .Values.notifications.prometheus_url }}"
+
+                incident_data['description'] = alert_details
+                incident_data['priority'] = priority_map.get(severity, '4')
+                incident_data['category'] = 'Infrastructure'
+                incident_data['subcategory'] = 'Monitoring'
+                incident_data['assignment_group'] = '{{ .Values.notifications.servicenow.assignment_group | default "IT Operations" }}'
+                incident_data['caller_id'] = '{{ .Values.notifications.servicenow.caller_id | default "system.observability" }}'
+                incident_data['u_source'] = 'Kubernetes Observability Stack'
 
                 # Create incident in ServiceNow
                 url = "https://" + SERVICENOW_INSTANCE + "/api/now/table/" + SERVICENOW_TABLE
