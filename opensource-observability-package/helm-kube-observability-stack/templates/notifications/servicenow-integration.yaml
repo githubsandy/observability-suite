@@ -49,19 +49,19 @@ data:
 
                 # Create ServiceNow incident payload
                 incident_data = {
-                    'short_description': f"🚨 Observability Alert: {alert_name}",
-                    'description': f"""Alert Details:
-- Summary: {alert_name}
-- Description: {description}
-- Instance: {instance}
-- Namespace: {namespace}
-- Severity: {severity}
-- Started: {alert.get('startsAt', 'Unknown')}
-- Generator URL: {alert.get('generatorURL', '')}
+                    'short_description': "🚨 Observability Alert: " + alert_name,
+                    'description': """Alert Details:
+- Summary: """ + alert_name + """
+- Description: """ + description + """
+- Instance: """ + instance + """
+- Namespace: """ + namespace + """
+- Severity: """ + severity + """
+- Started: """ + str(alert.get('startsAt', 'Unknown')) + """
+- Generator URL: """ + str(alert.get('generatorURL', '')) + """
 
 This incident was automatically created by the Observability Suite AlertManager.
-Dashboard: http://""" + "{{ .Values.notifications.grafana_url }}" + f"""
-Prometheus: http://""" + "{{ .Values.notifications.prometheus_url }}" + """
+Dashboard: http://{{ .Values.notifications.grafana_url }}
+Prometheus: http://{{ .Values.notifications.prometheus_url }}
 """,
                     'priority': priority_map.get(severity, '4'),
                     'category': 'Infrastructure',
@@ -72,7 +72,7 @@ Prometheus: http://""" + "{{ .Values.notifications.prometheus_url }}" + """
                 }
 
                 # Create incident in ServiceNow
-                url = f"https://{SERVICENOW_INSTANCE}/api/now/table/{SERVICENOW_TABLE}"
+                url = "https://" + SERVICENOW_INSTANCE + "/api/now/table/" + SERVICENOW_TABLE
                 headers = {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
@@ -87,14 +87,14 @@ Prometheus: http://""" + "{{ .Values.notifications.prometheus_url }}" + """
 
                 if response.status_code == 201:
                     incident = response.json()['result']
-                    logging.info(f"Created ServiceNow incident: {incident['number']}")
+                    logging.info("Created ServiceNow incident: " + incident['number'])
                 else:
-                    logging.error(f"Failed to create incident: {response.text}")
+                    logging.error("Failed to create incident: " + response.text)
 
         return jsonify({'status': 'success', 'message': 'Incidents processed'})
 
     except Exception as e:
-        logging.error(f"Error processing webhook: {str(e)}")
+        logging.error("Error processing webhook: " + str(e))
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
     @app.route('/health', methods=['GET'])
