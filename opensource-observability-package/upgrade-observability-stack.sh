@@ -49,7 +49,22 @@ if ! helm status $RELEASE_NAME -n $KUBERNETES_NAMESPACE &> /dev/null; then
 fi
 
 echo -e "${BLUE}🚀 Running Helm upgrade...${NC}"
-helm upgrade $RELEASE_NAME $CHART_DIR --namespace $KUBERNETES_NAMESPACE
+
+# Add timestamp to force pod restart on config changes
+TIMESTAMP=$(date +%s)
+helm upgrade $RELEASE_NAME $CHART_DIR --namespace $KUBERNETES_NAMESPACE \
+  --set-string global.restartTimestamp="$TIMESTAMP" \
+  --force \
+  --wait \
+  --timeout=10m
+
+echo -e "${CYAN}♻️  Rolling restart all deployments to ensure config updates...${NC}"
+kubectl rollout restart deployment -n $KUBERNETES_NAMESPACE
+kubectl rollout restart daemonset -n $KUBERNETES_NAMESPACE
+
+echo -e "${CYAN}⏳ Waiting for rollout to complete...${NC}"
+kubectl rollout status deployment --all -n $KUBERNETES_NAMESPACE --timeout=300s
+kubectl rollout status daemonset --all -n $KUBERNETES_NAMESPACE --timeout=300s
 
 if [ $? -eq 0 ]; then
     echo ""

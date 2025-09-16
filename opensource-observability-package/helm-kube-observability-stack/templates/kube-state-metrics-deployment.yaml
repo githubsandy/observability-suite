@@ -22,8 +22,7 @@ spec:
         args:
         - --port=8080
         - --telemetry-port=8081
-        - --apiserver-timeout=120s
-        - --kubeconfig-timeout=60s
+        - --use-apiserver-cache
         - --metric-labels-allowlist=nodes=[*]
         env:
         - name: KUBERNETES_SERVICE_HOST
