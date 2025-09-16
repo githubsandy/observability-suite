@@ -52,9 +52,12 @@ echo -e "${BLUE}🚀 Running Helm upgrade...${NC}"
 
 # Add timestamp to force pod restart on config changes
 TIMESTAMP=$(date +%s)
+
+echo -e "${CYAN}⚠️  Handling PVC immutability issue...${NC}"
+# Use reuse-values to preserve existing PVC configurations
 helm upgrade $RELEASE_NAME $CHART_DIR --namespace $KUBERNETES_NAMESPACE \
   --set-string global.restartTimestamp="$TIMESTAMP" \
-  --force \
+  --reuse-values \
   --wait \
   --timeout=10m
 
