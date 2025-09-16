@@ -206,7 +206,7 @@ kubeStateMetrics:
 
 mongodbExporter:
   image: percona/mongodb_exporter:0.40.0
-  replicas: 0  # Disabled - no MongoDB service configured
+  replicas: 1
   mongodbUri: "mongodb://username:password@mongodb-host:27017"  # Change this to your MongoDB URI
   resources:
     limits:
@@ -221,7 +221,7 @@ mongodbExporter:
 
 postgresExporter:
   image: prometheuscommunity/postgres-exporter:v0.15.0
-  replicas: 0  # Disabled - no PostgreSQL service configured
+  replicas: 1
   dataSourceName: "postgresql://username:password@postgres-host:5432/dbname?sslmode=disable"  # Change this to your PostgreSQL connection string
   resources:
     limits:
@@ -254,7 +254,7 @@ jenkinsExporter:
 
 redisExporter:
   image: oliver006/redis_exporter:latest
-  replicas: 0  # Disabled - no Redis service configured
+  replicas: 1
   redisAddr: "redis://your-redis-host:6379"       # Change to your Redis address
   redisPassword: ""                                # Add Redis password if required
   resources:
@@ -314,6 +314,24 @@ tempo:
     port: 3200
   storage:
     size: 10Gi
+    # storageClass: ""  # Use default storage class
+
+# Alert Management Configuration
+alertmanager:
+  image: prom/alertmanager:v0.26.0
+  replicas: 1
+  resources:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 64Mi
+  service:
+    type: NodePort            # Direct IP access enabled
+    port: 9093
+  storage:
+    size: 5Gi
     # storageClass: ""  # Use default storage class
 
 # Monitoring Services Configuration

@@ -14,7 +14,7 @@ spec:
       labels:
         app: cadvisor
     spec:
-      automountServiceAccountToken: false
+      serviceAccountName: cadvisor
       tolerations:
       - key: node-role.kubernetes.io/master
         effect: NoSchedule
@@ -75,7 +75,7 @@ spec:
       - name: docker
         hostPath:
           path: /var/lib/docker
-      - name: containerd  
+      - name: containerd
         hostPath:
           path: /run/containerd
       - name: disk

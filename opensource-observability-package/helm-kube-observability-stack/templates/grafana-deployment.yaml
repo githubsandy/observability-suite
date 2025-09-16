@@ -27,10 +27,6 @@ spec:
         env:
         - name: GF_SECURITY_ADMIN_PASSWORD
           value: {{ .Values.grafana.adminPassword }}
-        - name: GF_ALERTING_ENABLED
-          value: "false"
-        - name: GF_UNIFIED_ALERTING_ENABLED
-          value: "false"
         resources:
           limits:
             cpu: {{ .Values.grafana.resources.limits.cpu }}
