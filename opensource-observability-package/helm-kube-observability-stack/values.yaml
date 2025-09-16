@@ -206,7 +206,7 @@ kubeStateMetrics:
 
 mongodbExporter:
   image: percona/mongodb_exporter:0.40.0
-  replicas: 1
+  replicas: 0  # Disabled - no MongoDB service configured
   mongodbUri: "mongodb://username:password@mongodb-host:27017"  # Change this to your MongoDB URI
   resources:
     limits:
@@ -221,7 +221,7 @@ mongodbExporter:
 
 postgresExporter:
   image: prometheuscommunity/postgres-exporter:v0.15.0
-  replicas: 1
+  replicas: 0  # Disabled - no PostgreSQL service configured
   dataSourceName: "postgresql://username:password@postgres-host:5432/dbname?sslmode=disable"  # Change this to your PostgreSQL connection string
   resources:
     limits:
@@ -254,7 +254,7 @@ jenkinsExporter:
 
 redisExporter:
   image: oliver006/redis_exporter:latest
-  replicas: 1
+  replicas: 0  # Disabled - no Redis service configured
   redisAddr: "redis://your-redis-host:6379"       # Change to your Redis address
   redisPassword: ""                                # Add Redis password if required
   resources:
