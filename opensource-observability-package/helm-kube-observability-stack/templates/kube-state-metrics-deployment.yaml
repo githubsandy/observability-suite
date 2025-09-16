@@ -19,6 +19,11 @@ spec:
       containers:
       - name: kube-state-metrics
         image: {{ .Values.kubeStateMetrics.image }}
+        args:
+        - --port=8080
+        - --telemetry-port=8081
+        - --apiserver-timeout=60s
+        - --kubeconfig-timeout=30s
         ports:
         - containerPort: 8080
           name: http-metrics
