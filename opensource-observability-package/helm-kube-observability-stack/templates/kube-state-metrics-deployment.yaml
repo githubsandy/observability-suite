@@ -16,8 +16,6 @@ spec:
         app: kube-state-metrics
     spec:
       serviceAccount: kube-state-metrics
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
       containers:
       - name: kube-state-metrics
         image: {{ .Values.kubeStateMetrics.image }}
@@ -27,6 +25,11 @@ spec:
         - --apiserver-timeout=120s
         - --kubeconfig-timeout=60s
         - --metric-labels-allowlist=nodes=[*]
+        env:
+        - name: KUBERNETES_SERVICE_HOST
+          value: "kubernetes.default.svc.cluster.local"
+        - name: KUBERNETES_SERVICE_PORT
+          value: "443"
         ports:
         - containerPort: 8080
           name: http-metrics
