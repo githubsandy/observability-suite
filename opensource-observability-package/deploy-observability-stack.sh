@@ -123,23 +123,7 @@ if [ -z "$KUBERNETES_NAMESPACE" ]; then
     echo -e "${YELLOW}💡 Using default namespace: $KUBERNETES_NAMESPACE${NC}"
 fi
 
-# Validate ServiceNow if enabled
-if [ "$SERVICENOW_ENABLED" = "true" ]; then
-    if [ -z "$SERVICENOW_INSTANCE" ] || [ -z "$SERVICENOW_USERNAME" ] || [ "$SERVICENOW_INSTANCE" = "your-company.service-now.com" ]; then
-        echo -e "${RED}❌ Error: SERVICENOW_ENABLED=true but ServiceNow credentials are not configured${NC}"
-        echo -e "${YELLOW}💡 Update ServiceNow settings in customer-config.env${NC}"
-        exit 1
-    fi
-fi
-
-# Validate WebEx if enabled
-if [ "$WEBEX_ENABLED" = "true" ]; then
-    if [ -z "$WEBEX_BOT_TOKEN" ] || [ -z "$WEBEX_ROOM_ID" ] || [ "$WEBEX_BOT_TOKEN" = "YOUR_WEBEX_BOT_TOKEN_HERE" ]; then
-        echo -e "${RED}❌ Error: WEBEX_ENABLED=true but WebEx credentials are not configured${NC}"
-        echo -e "${YELLOW}💡 Update WebEx settings in customer-config.env${NC}"
-        exit 1
-    fi
-fi
+# ServiceNow and WebEx integrations temporarily removed
 
 # Validate cluster profile
 if [ -n "$CLUSTER_PROFILE" ]; then
@@ -180,38 +164,7 @@ echo -e "${CYAN}🌐 Enabling NodePort access for direct IP access${NC}"
 sed -i.tmp 's/type: ClusterIP.*# Change to NodePort for direct access/type: NodePort            # Direct IP access enabled/' "$temp_file"
 sed -i.tmp 's/type: ClusterIP$/type: NodePort            # Direct IP access enabled/' "$temp_file"
 
-# Enable Grafana alerting if any notifications are enabled
-if [ "$SERVICENOW_ENABLED" = "true" ] || [ "$WEBEX_ENABLED" = "true" ]; then
-    echo -e "${CYAN}🚨 Enabling Grafana native alerting${NC}"
-    sed -i.tmp "s/enabled: false  # Set to true to enable Grafana alerting/enabled: true/" "$temp_file"
-fi
-
-# Apply ServiceNow configuration
-if [ "$SERVICENOW_ENABLED" = "true" ]; then
-    echo -e "${CYAN}🎫 Configuring ServiceNow integration: ${SERVICENOW_INSTANCE}${NC}"
-    sed -i.tmp "/servicenow:/,/^  [a-zA-Z]/ {
-        s/enabled: false  # Set to true to enable ServiceNow integration/enabled: true/
-        s|instance: \"your-instance.service-now.com\"|instance: \"$SERVICENOW_INSTANCE\"|
-        s/username: \"servicenow_user\"/username: \"$SERVICENOW_USERNAME\"/
-        s/password: \"servicenow_password\"/password: \"$SERVICENOW_PASSWORD\"/
-        s/assignment_group: \"IT Operations\"/assignment_group: \"$SERVICENOW_ASSIGNMENT_GROUP\"/
-        s/caller_id: \"system.observability\"/caller_id: \"$SERVICENOW_CALLER_ID\"/
-    }" "$temp_file"
-else
-    echo -e "${YELLOW}⏭️  ServiceNow integration: Disabled${NC}"
-fi
-
-# Apply WebEx configuration
-if [ "$WEBEX_ENABLED" = "true" ]; then
-    echo -e "${CYAN}💬 Configuring WebEx Teams integration${NC}"
-    sed -i.tmp "/webex:/,/^  [a-zA-Z]\\|^[a-zA-Z]/ {
-        s/enabled: false  # Set to true to enable WebEx integration/enabled: true/
-        s/bot_token: \"YOUR_WEBEX_BOT_TOKEN_HERE\"/bot_token: \"$WEBEX_BOT_TOKEN\"/
-        s/room_id: \"YOUR_WEBEX_ROOM_ID_HERE\"/room_id: \"$WEBEX_ROOM_ID\"/
-    }" "$temp_file"
-else
-    echo -e "${YELLOW}⏭️  WebEx Teams integration: Disabled${NC}"
-fi
+# Alerting integrations temporarily removed for clean deployment
 
 # Apply resource sizing, storage, monitoring scope, and company information
 # (All the configuration logic from apply-customer-config.sh)
@@ -242,14 +195,7 @@ if [ -n "$COMPANY_NAME" ] && [ "$COMPANY_NAME" != "Your Company Name" ]; then
     echo -e "${CYAN}🏢 Setting company name: $COMPANY_NAME${NC}"
 fi
 
-# Apply alert thresholds if specified
-if [ -n "$ALERT_POD_CRASH_THRESHOLD" ]; then
-    sed -i.tmp "s/pod_crash_threshold: 5/pod_crash_threshold: $ALERT_POD_CRASH_THRESHOLD/" "$temp_file"
-fi
-if [ -n "$ALERT_MEMORY_THRESHOLD" ]; then
-    MEMORY_DECIMAL=$(echo "scale=2; $ALERT_MEMORY_THRESHOLD / 100" | bc -l)
-    sed -i.tmp "s/memory_threshold: 0.9/memory_threshold: $MEMORY_DECIMAL/" "$temp_file"
-fi
+# Alert threshold configuration removed
 
 # Remove temporary sed backup files and replace original
 rm -f "$temp_file.tmp"
@@ -300,15 +246,14 @@ echo -e "${CYAN}🌐 Kubernetes Node IP:${NC} $KUBERNETES_NODE_IP"
 echo -e "${CYAN}🏗️  Namespace:${NC} $KUBERNETES_NAMESPACE"
 echo -e "${CYAN}⚙️  Cluster Profile:${NC} ${CLUSTER_PROFILE:-medium}"
 echo -e "${CYAN}🏢 Company Name:${NC} ${COMPANY_NAME:-Your Company Name}"
-echo -e "${CYAN}🎫 ServiceNow:${NC} $([ "$SERVICENOW_ENABLED" = "true" ] && echo "✅ Enabled" || echo "❌ Disabled")"
-echo -e "${CYAN}💬 WebEx Teams:${NC} $([ "$WEBEX_ENABLED" = "true" ] && echo "✅ Enabled" || echo "❌ Disabled")"
+echo -e "${CYAN}🔔 Alerting:${NC} Clean deployment without notifications"
 echo -e "${CYAN}🌐 Access Method:${NC} NodePort (Direct IP - No port forwarding needed)"
 echo ""
 
 # Service access URLs
 echo -e "${BLUE}🌐 SERVICE ACCESS URLs (Ready to Use!)${NC}"
 echo "────────────────────────────────────────────────────────────────────────"
-echo -e "${GREEN}📊 Grafana (Dashboards + Alerting):${NC} http://$KUBERNETES_NODE_IP:30300"
+echo -e "${GREEN}📊 Grafana (Dashboards):${NC} http://$KUBERNETES_NODE_IP:30300"
 echo -e "   └─ Login: admin / admin"
 echo -e "${GREEN}📈 Prometheus (Metrics):${NC} http://$KUBERNETES_NODE_IP:30090"
 echo -e "${GREEN}🔍 Tempo (Tracing):${NC} http://$KUBERNETES_NODE_IP:30320"
@@ -316,12 +261,7 @@ echo -e "${GREEN}📡 Smokeping (Network):${NC} http://$KUBERNETES_NODE_IP:30800
 echo -e "${GREEN}📋 Loki (Logs):${NC} http://$KUBERNETES_NODE_IP:30310"
 echo -e "${GREEN}🔧 Blackbox (Endpoints):${NC} http://$KUBERNETES_NODE_IP:30115"
 
-if [ "$SERVICENOW_ENABLED" = "true" ]; then
-    echo -e "${GREEN}🎫 ServiceNow Webhook:${NC} http://$KUBERNETES_NODE_IP:30950"
-fi
-if [ "$WEBEX_ENABLED" = "true" ]; then
-    echo -e "${GREEN}💬 WebEx Webhook:${NC} http://$KUBERNETES_NODE_IP:30951"
-fi
+# Notification webhooks temporarily removed
 echo ""
 
 # Verification commands
@@ -337,16 +277,7 @@ echo -e "${YELLOW}3.${NC} Watch pods starting up:"
 echo "   ${CYAN}kubectl get pods -n $KUBERNETES_NAMESPACE -w${NC}"
 echo ""
 
-# Test notification instructions
-if [ "$SERVICENOW_ENABLED" = "true" ] || [ "$WEBEX_ENABLED" = "true" ]; then
-    echo -e "${BLUE}🧪 TEST YOUR NOTIFICATIONS${NC}"
-    echo "────────────────────────────────────────────────────────────────────────"
-    echo -e "${YELLOW}Trigger a test alert (causes Prometheus to go down for 3 minutes):${NC}"
-    echo "   ${CYAN}kubectl scale deployment prometheus --replicas=0 -n $KUBERNETES_NAMESPACE${NC}"
-    echo "   ${CYAN}sleep 180  # Wait for alert to fire${NC}"
-    echo "   ${CYAN}kubectl scale deployment prometheus --replicas=1 -n $KUBERNETES_NAMESPACE${NC}"
-    echo ""
-fi
+# Alert testing temporarily removed
 
 # Backup information
 echo -e "${BLUE}💾 BACKUP INFORMATION${NC}"
@@ -356,7 +287,7 @@ echo -e "${CYAN}Customer config file:${NC} $CONFIG_FILE"
 echo ""
 
 echo -e "${GREEN}🎉 OBSERVABILITY SUITE DEPLOYMENT COMPLETED!${NC}"
-echo -e "${BLUE}✨ 16 Services deployed with Grafana-native alerting${NC}"
+echo -e "${BLUE}✨ 16 Services deployed for observability monitoring${NC}"
 echo -e "${BLUE}🚀 Access your monitoring dashboard at: http://$KUBERNETES_NODE_IP:30300${NC}"
 echo -e "${BLUE}👤 Login with: admin / admin${NC}"
 echo ""

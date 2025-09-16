@@ -316,8 +316,7 @@ tempo:
     size: 10Gi
     # storageClass: ""  # Use default storage class
 
-# Grafana Native Alerting Configuration (Replaces AlertManager)
-# All alerting is now handled directly by Grafana for simplicity
+# Monitoring Services Configuration
 
 # Network Monitoring Configuration
 smokeping:
@@ -412,8 +411,6 @@ ingress:
       enabled: false
       secretName: tempo-tls
   
-  # AlertManager removed - using Grafana native alerting instead
-
   # Smokeping Ingress Configuration
   smokeping:
     enabled: true
@@ -423,7 +420,7 @@ ingress:
     tls:
       enabled: false
       secretName: smokeping-tls
-  
+
   # MTR Ingress Configuration
   mtr:
     enabled: true
@@ -433,83 +430,3 @@ ingress:
     tls:
       enabled: false
       secretName: mtr-tls
-
-#*************************************************************
-# Notification Integrations Configuration
-#*************************************************************
-
-notifications:
-  # IMPORTANT: Replace with your actual Kubernetes node IP
-  node_ip: "YOUR-NODE-IP"  # This is used for webhook direct access
-
-  # Dashboard URLs (auto-generated from node_ip)
-  grafana_url: "YOUR-NODE-IP:30300"
-  prometheus_url: "YOUR-NODE-IP:30090"
-
-  # Grafana Native Alerting (replaces AlertManager)
-  grafana_alerting:
-    enabled: false  # Set to true to enable Grafana alerting
-
-  # ServiceNow Incident Management Integration
-  servicenow:
-    enabled: false  # Set to true to enable ServiceNow integration
-    instance: "your-instance.service-now.com"  # Replace with your ServiceNow instance
-    username: "servicenow_user"                 # Replace with your ServiceNow username
-    password: "servicenow_password"             # Replace with your ServiceNow password
-    table: "incident"                           # ServiceNow table (usually 'incident')
-    assignment_group: "IT Operations"           # Default assignment group
-    caller_id: "system.observability"          # Caller ID for automated incidents
-
-  # Microsoft Outlook/Office 365 Email Integration
-  outlook:
-    enabled: false  # Set to true to enable Outlook integration
-    smtp:
-      server: "smtp.office365.com:587"         # Outlook SMTP server
-      username: "alerts@yourcompany.com"       # Replace with your email
-      password: "your-app-password"            # Use App Password (not regular password)
-      from_email: "observability-alerts@yourcompany.com"  # From address
-      require_tls: true
-
-    recipients:
-      critical:
-        primary: "critical-alerts@yourcompany.com"     # Replace with critical alerts email
-        cc: "ops-team@yourcompany.com"                 # Replace with ops team email
-      warning:
-        primary: "alerts@yourcompany.com"              # Replace with warning alerts email
-        cc: ""                                         # Optional CC for warnings
-      info:
-        primary: "info-alerts@yourcompany.com"         # Replace with info alerts email
-
-    support_email: "support@yourcompany.com"          # Support contact email
-
-  # Cisco WebEx Teams Integration
-  webex:
-    enabled: false  # Set to true to enable WebEx integration
-    bot_token: "YOUR_WEBEX_BOT_TOKEN_HERE"            # Replace with your WebEx bot token
-    room_id: "YOUR_WEBEX_ROOM_ID_HERE"                # Replace with your WebEx room ID
-
-#*************************************************************
-# Alert Rules Configuration
-#*************************************************************
-
-alerting:
-  enabled: true
-  rules:
-    # Infrastructure alerts
-    infrastructure:
-      enabled: true
-      pod_crash_threshold: 5        # Number of restarts in 1h to trigger alert
-      memory_threshold: 0.9         # Memory usage percentage (0.9 = 90%)
-      disk_threshold: 0.1           # Free disk space percentage (0.1 = 10%)
-
-    # Application alerts
-    application:
-      enabled: true
-      error_rate_threshold: 0.1     # Error rate per second
-      response_time_threshold: 5    # Response time in seconds
-
-    # Network alerts
-    network:
-      enabled: true
-      latency_threshold: 100        # Network latency in ms
-      packet_loss_threshold: 0.05   # Packet loss percentage (0.05 = 5%)

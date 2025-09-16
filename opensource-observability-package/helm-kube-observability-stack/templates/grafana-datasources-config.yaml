@@ -20,8 +20,6 @@ data:
       basicAuth: false
       jsonData:
         httpMethod: POST
-        manageAlerts: true
-        alertmanagerUid: alertmanager
     
     # Loki Datasource for Logs  
     - name: Loki
