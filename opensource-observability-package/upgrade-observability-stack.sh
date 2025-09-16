@@ -49,29 +49,12 @@ if ! helm status $RELEASE_NAME -n $KUBERNETES_NAMESPACE &> /dev/null; then
 fi
 
 echo -e "${BLUE}🚀 Running Helm upgrade...${NC}"
+helm upgrade $RELEASE_NAME $CHART_DIR --namespace $KUBERNETES_NAMESPACE
 
-# Simple approach: upgrade only deployments, services, configmaps (skip PVCs)
-echo -e "${CYAN}⚠️  PVCs are immutable - keeping existing storage...${NC}"
-
-# Standard helm upgrade - let Helm handle what it can update
-helm upgrade $RELEASE_NAME $CHART_DIR --namespace $KUBERNETES_NAMESPACE \
-  --wait \
-  --timeout=10m || {
-    echo -e "${YELLOW}⚠️  Standard upgrade failed, trying with --force...${NC}"
-    # If standard upgrade fails, force it but ignore PVC errors
-    helm upgrade $RELEASE_NAME $CHART_DIR --namespace $KUBERNETES_NAMESPACE \
-      --force \
-      --wait \
-      --timeout=10m 2>/dev/null || true
-  }
-
-echo -e "${CYAN}♻️  Rolling restart all deployments to ensure config updates...${NC}"
-kubectl rollout restart deployment -n $KUBERNETES_NAMESPACE
-kubectl rollout restart daemonset -n $KUBERNETES_NAMESPACE
-
-echo -e "${CYAN}⏳ Waiting for rollout to complete...${NC}"
-kubectl rollout status deployment --all -n $KUBERNETES_NAMESPACE --timeout=300s
-kubectl rollout status daemonset --all -n $KUBERNETES_NAMESPACE --timeout=300s
+# Optional: Force restart pods to pick up ConfigMap changes
+# Uncomment the lines below if you want to ensure ALL config changes are applied
+# echo -e "${CYAN}♻️  Restarting pods to pick up config changes...${NC}"
+# kubectl rollout restart deployment -n $KUBERNETES_NAMESPACE
 
 if [ $? -eq 0 ]; then
     echo ""
