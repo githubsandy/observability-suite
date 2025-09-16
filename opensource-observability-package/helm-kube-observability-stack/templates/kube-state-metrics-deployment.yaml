@@ -16,14 +16,17 @@ spec:
         app: kube-state-metrics
     spec:
       serviceAccount: kube-state-metrics
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       containers:
       - name: kube-state-metrics
         image: {{ .Values.kubeStateMetrics.image }}
         args:
         - --port=8080
         - --telemetry-port=8081
-        - --apiserver-timeout=60s
-        - --kubeconfig-timeout=30s
+        - --apiserver-timeout=120s
+        - --kubeconfig-timeout=60s
+        - --metric-labels-allowlist=nodes=[*]
         ports:
         - containerPort: 8080
           name: http-metrics
