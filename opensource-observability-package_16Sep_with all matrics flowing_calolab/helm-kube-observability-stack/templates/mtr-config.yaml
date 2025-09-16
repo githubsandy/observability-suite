@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mtr-config
+  namespace: {{ .Values.namespace }}
+data:
+  mtr-targets.txt: |
+    # MTR Network Diagnostic Targets
+    # Format: hostname/IP description
+    8.8.8.8 Google DNS Primary
+    8.8.4.4 Google DNS Secondary
+    1.1.1.1 CloudFlare DNS Primary  
+    1.0.0.1 CloudFlare DNS Secondary
+    208.67.222.222 OpenDNS Primary
+    208.67.220.220 OpenDNS Secondary
+  
+  run-mtr.sh: |
+    #!/bin/bash
+    
+    # MTR Network Diagnostics Script
+    echo "Starting MTR Network Diagnostics..."
+    
+    # Create results directory
+    mkdir -p /data/results
+    
+    # Read targets file
+    while IFS=' ' read -r target description; do
+        if [[ ! $target =~ ^#.*$ ]] && [[ -n $target ]]; then
+            echo "Running MTR for $target ($description)..."
+            mtr --report --report-cycles=10 --json "$target" > "/data/results/mtr-$target.json"
+            mtr --report --report-cycles=10 "$target" > "/data/results/mtr-$target.txt"
+        fi
+    done < /config/mtr-targets.txt
+    
+    echo "MTR diagnostics completed. Results available in /data/results/"

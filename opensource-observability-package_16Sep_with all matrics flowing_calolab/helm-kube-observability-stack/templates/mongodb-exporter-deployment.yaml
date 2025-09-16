@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb-exporter
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: mongodb-exporter
+spec:
+  replicas: {{ .Values.mongodbExporter.replicas }}
+  selector:
+    matchLabels:
+      app: mongodb-exporter
+  template:
+    metadata:
+      labels:
+        app: mongodb-exporter
+    spec:
+      containers:
+      - name: mongodb-exporter
+        image: {{ .Values.mongodbExporter.image }}
+        ports:
+        - containerPort: 9216
+          name: http-metrics
+        env:
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-exporter-secret
+              key: mongodb-uri
+        resources:
+          limits:
+            cpu: {{ .Values.mongodbExporter.resources.limits.cpu }}
+            memory: {{ .Values.mongodbExporter.resources.limits.memory }}
+          requests:
+            cpu: {{ .Values.mongodbExporter.resources.requests.cpu }}
+            memory: {{ .Values.mongodbExporter.resources.requests.memory }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 9216
+          initialDelaySeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 9216
+          initialDelaySeconds: 30
+          timeoutSeconds: 10

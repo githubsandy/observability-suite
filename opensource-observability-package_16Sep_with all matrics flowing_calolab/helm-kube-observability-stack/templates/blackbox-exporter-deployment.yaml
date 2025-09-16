@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blackbox-exporter
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blackbox-exporter
+  template:
+    metadata:
+      labels:
+        app: blackbox-exporter
+    spec:
+      containers:
+      - name: blackbox-exporter
+        image: prom/blackbox-exporter:latest
+        ports:
+        - containerPort: 9115
+          name: http
+        resources:
+          limits:
+            cpu: {{ .Values.blackboxExporter.resources.limits.cpu }}
+            memory: {{ .Values.blackboxExporter.resources.limits.memory }}
+          requests:
+            cpu: {{ .Values.blackboxExporter.resources.requests.cpu }}
+            memory: {{ .Values.blackboxExporter.resources.requests.memory }}
+        volumeMounts:
+        - name: blackbox-config
+          mountPath: /etc/blackbox
+      volumes:
+      - name: blackbox-config
+        configMap:
+          name: blackbox-exporter-config

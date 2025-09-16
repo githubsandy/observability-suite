@@ -16,8 +16,6 @@ spec:
       containers:
       - name: loki
         image: {{ .Values.loki.image }}
-        args:
-          - -config.file=/etc/loki/loki-config.yaml
         ports:
         - containerPort: 3100
           name: http
@@ -28,14 +26,3 @@ spec:
           requests:
             cpu: {{ .Values.loki.resources.requests.cpu }}
             memory: {{ .Values.loki.resources.requests.memory }}
-        volumeMounts:
-        - name: loki-config
-          mountPath: /etc/loki
-        - name: loki-storage
-          mountPath: /loki
-      volumes:
-      - name: loki-config
-        configMap:
-          name: loki-config
-      - name: loki-storage
-        emptyDir: {}

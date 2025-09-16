@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mtr
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: mtr
+spec:
+  replicas: {{ .Values.mtr.replicas }}
+  selector:
+    matchLabels:
+      app: mtr
+  template:
+    metadata:
+      labels:
+        app: mtr
+    spec:
+      containers:
+      - name: mtr
+        # Use Python Alpine image directly
+        image: python:3.12-alpine
+        ports:
+        - containerPort: 8080
+          name: http
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - |
+            mkdir -p /data \
+            && echo 'MTR Network Diagnostics Service' > /data/index.html \
+            && echo 'MTR requires privileged access - configure as needed' > /data/mtr-info.txt \
+            && python3 -m http.server 8080 --directory /data
+        resources:
+          limits:
+            cpu: {{ .Values.mtr.resources.limits.cpu }}
+            memory: {{ .Values.mtr.resources.limits.memory }}
+          requests:
+            cpu: {{ .Values.mtr.resources.requests.cpu }}
+            memory: {{ .Values.mtr.resources.requests.memory }}
+        volumeMounts:
+        - name: mtr-config
+          mountPath: /config
+        - name: mtr-data
+          mountPath: /data
+      volumes:
+      - name: mtr-config
+        configMap:
+          name: mtr-config
+      - name: mtr-data
+        persistentVolumeClaim:
+          claimName: mtr-pvc

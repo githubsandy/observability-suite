@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-exporter
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: mongodb-exporter
+spec:
+  type: {{ .Values.mongodbExporter.service.type }}
+  ports:
+  - name: http-metrics
+    port: {{ .Values.mongodbExporter.service.port }}
+    targetPort: 9216
+    protocol: TCP
+  selector:
+    app: mongodb-exporter

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mtr-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.mtr.storage.size }}
+  {{- if .Values.mtr.storage.storageClass }}
+  storageClassName: {{ .Values.mtr.storage.storageClass }}
+  {{- end }}

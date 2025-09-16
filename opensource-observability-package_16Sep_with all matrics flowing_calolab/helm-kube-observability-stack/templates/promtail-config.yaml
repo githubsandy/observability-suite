@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: promtail-config
+  namespace: {{ .Values.namespace }}
+data:
+  promtail-config.yaml: |
+    server:
+      http_listen_port: 9080
+
+    positions:
+      filename: /tmp/positions/positions.yaml
+
+    clients:
+      - url: http://loki:3100/loki/api/v1/push
+
+    scrape_configs:
+      # Kubernetes Pod logs with comprehensive labels
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: __host__
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_container_name]
+            target_label: container
+          - replacement: /var/log/pods/*$1/*.log
+            separator: /
+            source_labels: [__meta_kubernetes_pod_uid, __meta_kubernetes_pod_container_name]
+            target_label: __path__
+        pipeline_stages:
+          - cri: {}
+          - labeldrop:
+              - __path__
+          - labels:
+              pod:
+              namespace:
+              container:
+              host: __host__
+
+      # System logs
+      - job_name: system-logs
+        static_configs:
+          - targets:
+              - localhost
+            labels:
+              job: system
+              host: ${HOSTNAME}
+              __path__: /var/log/syslog
+        pipeline_stages:
+          - regex:
+              expression: '^(?P<timestamp>\w+\s+\d+\s+\d+:\d+:\d+)\s+(?P<hostname>\w+)\s+(?P<service>\w+).*'
+          - labels:
+              service:
+              hostname:
+          - timestamp:
+              source: timestamp
+              format: Jan 02 15:04:05
+
+      # Observability stack logs
+      - job_name: observability-logs
+        static_configs:
+          - targets:
+              - localhost
+            labels:
+              job: observability
+              component: prometheus
+              __path__: /var/log/containers/prometheus-*.log
+          - targets:
+              - localhost
+            labels:
+              job: observability
+              component: grafana
+              __path__: /var/log/containers/grafana-*.log
+          - targets:
+              - localhost
+            labels:
+              job: observability
+              component: loki
+              __path__: /var/log/containers/loki-*.log
+        pipeline_stages:
+          - cri: {}
+          - labels:
+              component:
+
+      # Application error logs
+      - job_name: error-logs
+        static_configs:
+          - targets:
+              - localhost
+            labels:
+              job: errors
+              log_type: error
+              __path__: /var/log/**/*error*.log
+        pipeline_stages:
+          - match:
+              selector: '{job="errors"}'
+              stages:
+                - regex:
+                    expression: '(?i)(?P<level>error|exception|fail)'
+                - labels:
+                    level:
