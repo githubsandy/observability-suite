@@ -117,11 +117,11 @@ prometheus:
   replicas: 1
   resources:
     limits:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 1000m
+      memory: 2Gi
     requests:
-      cpu: 250m
-      memory: 256Mi
+      cpu: 500m
+      memory: 1Gi
   service:
     type: NodePort            # Direct IP access enabled
     port: 9090
