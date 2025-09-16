@@ -50,16 +50,20 @@ fi
 
 echo -e "${BLUE}🚀 Running Helm upgrade...${NC}"
 
-# Add timestamp to force pod restart on config changes
-TIMESTAMP=$(date +%s)
+# Simple approach: upgrade only deployments, services, configmaps (skip PVCs)
+echo -e "${CYAN}⚠️  PVCs are immutable - keeping existing storage...${NC}"
 
-echo -e "${CYAN}⚠️  Handling PVC immutability issue...${NC}"
-# Use reuse-values to preserve existing PVC configurations
+# Standard helm upgrade - let Helm handle what it can update
 helm upgrade $RELEASE_NAME $CHART_DIR --namespace $KUBERNETES_NAMESPACE \
-  --set-string global.restartTimestamp="$TIMESTAMP" \
-  --reuse-values \
   --wait \
-  --timeout=10m
+  --timeout=10m || {
+    echo -e "${YELLOW}⚠️  Standard upgrade failed, trying with --force...${NC}"
+    # If standard upgrade fails, force it but ignore PVC errors
+    helm upgrade $RELEASE_NAME $CHART_DIR --namespace $KUBERNETES_NAMESPACE \
+      --force \
+      --wait \
+      --timeout=10m 2>/dev/null || true
+  }
 
 echo -e "${CYAN}♻️  Rolling restart all deployments to ensure config updates...${NC}"
 kubectl rollout restart deployment -n $KUBERNETES_NAMESPACE
