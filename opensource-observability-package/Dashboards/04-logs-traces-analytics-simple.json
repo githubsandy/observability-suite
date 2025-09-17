@@ -78,7 +78,7 @@
       "gridPos": {"h": 6, "w": 24, "x": 0, "y": 0},
       "targets": [
         {
-          "expr": "sum(count_over_time({job=~\".*\"}[5m]))",
+          "expr": "sum(count_over_time({job=~\".+\"}[5m]))",
           "legendFormat": "Total Log Lines",
           "refId": "A",
           "datasource": "${DS_LOKI}"
@@ -119,7 +119,7 @@
       "gridPos": {"h": 8, "w": 24, "x": 0, "y": 6},
       "targets": [
         {
-          "expr": "sum(rate({job=~\".*\"}[5m]))",
+          "expr": "sum(rate({job=~\".+\"}[5m]))",
           "refId": "A",
           "datasource": "${DS_LOKI}"
         }
@@ -142,7 +142,7 @@
       "gridPos": {"h": 12, "w": 24, "x": 0, "y": 14},
       "targets": [
         {
-          "expr": "{job=~\".*\"}",
+          "expr": "{job=~\".+\"}",
           "refId": "A",
           "datasource": "${DS_LOKI}"
         }
