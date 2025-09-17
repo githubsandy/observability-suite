@@ -27,9 +27,7 @@ metadata:
   labels:
     app: grafana
 data:
-  01-node-infrastructure-monitoring.json: |
-{{ .Files.Get "Dashboards/01-node-infrastructure-monitoring.json" | indent 4 }}
-  02-container-pod-analytics-simple.json: |
-{{ .Files.Get "Dashboards/02-container-pod-analytics-simple.json" | indent 4 }}
-  03-database-monitoring-simple.json: |
-{{ .Files.Get "Dashboards/03-database-monitoring-simple.json" | indent 4 }}
+{{- range $path, $_ := .Files.Glob "Dashboards/*.json" }}
+  {{ base $path }}: |
+{{ $.Files.Get $path | indent 4 }}
+{{- end }}
