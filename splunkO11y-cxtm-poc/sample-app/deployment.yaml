@@ -17,13 +17,11 @@ spec:
     spec:
       containers:
       - name: sample-app
-        image: python:3.11-slim
+        image: tiangolo/uwsgi-nginx-flask:python3.11
         command:
-        - sh
+        - python
         - -c
         - |
-          pip install flask==2.3.3 gunicorn==21.2.0
-          python -c "
           from flask import Flask, jsonify
           import time, random, logging
           logging.basicConfig(level=logging.INFO)
@@ -36,26 +34,24 @@ spec:
 
           @app.route('/')
           def home():
-              logger.info('Home endpoint accessed')
+              logger.info('Home endpoint accessed - BASELINE (no instrumentation)')
               db_data = simulate_database_call()
-              return jsonify({'service': 'sample-app', 'status': 'running', 'version': '1.0.0', 'data': db_data, 'message': 'Simple Flask app before instrumentation'})
+              return jsonify({'service': 'sample-app', 'status': 'running', 'version': '1.0.0', 'instrumentation': 'none', 'data': db_data, 'message': 'BASELINE: Flask app with NO instrumentation'})
 
           @app.route('/healthz')
           def health():
-              return jsonify({'status': 'healthy'})
+              return jsonify({'status': 'healthy', 'instrumentation': 'none'})
 
           @app.route('/api/users')
           def get_users():
-              logger.info('Getting users')
+              logger.info('Getting users - BASELINE')
               db_data = simulate_database_call()
               users = [{'id': 1, 'name': 'John Doe'}, {'id': 2, 'name': 'Jane Smith'}]
-              return jsonify({'users': users, 'metadata': db_data})
+              return jsonify({'users': users, 'metadata': db_data, 'instrumentation': 'none'})
 
-          if __name__ == '__main__':
-              app.run(host='0.0.0.0', port=5000, debug=True)
-          "
+          app.run(host='0.0.0.0', port=80, debug=True)
         ports:
-        - containerPort: 5000
+        - containerPort: 80
         readinessProbe:
           httpGet:
             path: /healthz
