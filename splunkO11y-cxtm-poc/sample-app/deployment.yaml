@@ -19,44 +19,130 @@ spec:
       - name: sample-app
         image: tiangolo/uwsgi-nginx-flask:python3.11
         command:
-        - python
+        - sh
         - -c
         - |
+          pip install opentelemetry-distro opentelemetry-exporter-otlp
+          python -c "
+          # MANUAL INSTRUMENTATION: ADD OpenTelemetry imports (ORIGINAL imports kept)
           from flask import Flask, jsonify
           import time, random, logging
+          import os
+          from opentelemetry import trace
+          from opentelemetry.sdk.trace import TracerProvider
+          from opentelemetry.sdk.trace.export import BatchSpanProcessor
+          from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+          from opentelemetry.instrumentation.flask import FlaskInstrumentor
+          from opentelemetry.sdk.resources import Resource
+
+          # ORIGINAL: Same logging setup
           logging.basicConfig(level=logging.INFO)
           logger = logging.getLogger(__name__)
+
+          # MANUAL INSTRUMENTATION: ADD OpenTelemetry SDK setup (NEW CODE)
+          resource = Resource.create({
+              'service.name': os.getenv('OTEL_SERVICE_NAME', 'sample-app-manual'),
+              'service.version': '1.0.0'
+          })
+          trace.set_tracer_provider(TracerProvider(resource=resource))
+          tracer = trace.get_tracer(__name__)
+
+          otlp_exporter = OTLPSpanExporter(
+              endpoint=os.getenv('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT', 'http://localhost:4318/v1/traces')
+          )
+          span_processor = BatchSpanProcessor(otlp_exporter)
+          trace.get_tracer_provider().add_span_processor(span_processor)
+          logger.info('MANUAL INSTRUMENTATION: OpenTelemetry SDK initialized')
+
+          # ORIGINAL: Same Flask app creation
           app = Flask(__name__)
 
+          # MANUAL INSTRUMENTATION: ADD auto-instrumentation (NEW CODE)
+          FlaskInstrumentor().instrument_app(app)
+
+          # MANUAL INSTRUMENTATION: WRAP original function with span (business logic unchanged)
           def simulate_database_call():
-              time.sleep(random.uniform(0.01, 0.05))
-              return {'data': f'record_{random.randint(1000, 9999)}'}
+              with tracer.start_as_current_span('database_operation') as span:
+                  span.set_attribute('db.operation', 'query')
+                  # ORIGINAL CODE: Exact same business logic
+                  time.sleep(random.uniform(0.01, 0.05))
+                  result = {'data': f'record_{random.randint(1000, 9999)}'}
+                  # MANUAL INSTRUMENTATION: ADD span attributes (business logic untouched)
+                  span.set_attribute('db.result_size', len(str(result)))
+                  return result  # ORIGINAL: Same return value
 
-          @app.route('/')
-          def home():
-              logger.info('Home endpoint accessed - BASELINE (no instrumentation)')
-              db_data = simulate_database_call()
-              return jsonify({'service': 'sample-app', 'status': 'running', 'version': '1.0.0', 'instrumentation': 'none', 'data': db_data, 'message': 'BASELINE: Flask app with NO instrumentation'})
+          @app.route('/')  # ORIGINAL: Same route decorator
+          def home():      # ORIGINAL: Same function name
+              # MANUAL INSTRUMENTATION: WRAP with span
+              with tracer.start_as_current_span('home_endpoint') as span:
+                  # ORIGINAL: Same log message (just updated text)
+                  logger.info('Home endpoint accessed - MANUAL INSTRUMENTATION')
+                  # MANUAL INSTRUMENTATION: ADD span attributes
+                  span.set_attribute('endpoint', 'home')
 
-          @app.route('/healthz')
-          def health():
-              return jsonify({'status': 'healthy', 'instrumentation': 'none'})
+                  # ORIGINAL: Same business logic call
+                  db_data = simulate_database_call()
 
-          @app.route('/api/users')
-          def get_users():
-              logger.info('Getting users - BASELINE')
-              db_data = simulate_database_call()
-              users = [{'id': 1, 'name': 'John Doe'}, {'id': 2, 'name': 'Jane Smith'}]
-              return jsonify({'users': users, 'metadata': db_data, 'instrumentation': 'none'})
+                  # ORIGINAL: Same return structure (just updated values)
+                  return jsonify({
+                      'service': 'sample-app',      # ORIGINAL
+                      'status': 'running',          # ORIGINAL
+                      'version': '1.0.0',           # ORIGINAL
+                      'instrumentation': 'manual',  # UPDATED (was 'none')
+                      'data': db_data,              # ORIGINAL
+                      'message': 'MANUAL INSTRUMENTATION: OpenTelemetry integrated'  # UPDATED
+                  })
 
+          @app.route('/healthz')  # ORIGINAL: Same route
+          def health():           # ORIGINAL: Same function name
+              # MANUAL INSTRUMENTATION: WRAP with span
+              with tracer.start_as_current_span('health_check'):
+                  # ORIGINAL: Same return structure (just updated instrumentation field)
+                  return jsonify({'status': 'healthy', 'instrumentation': 'manual'})
+
+          @app.route('/api/users')  # ORIGINAL: Same route
+          def get_users():          # ORIGINAL: Same function name
+              # MANUAL INSTRUMENTATION: WRAP with span
+              with tracer.start_as_current_span('get_users_api') as span:
+                  # ORIGINAL: Same log message (updated text)
+                  logger.info('Getting users - MANUAL INSTRUMENTATION')
+
+                  # ORIGINAL: Same business logic call
+                  db_data = simulate_database_call()
+
+                  # ORIGINAL: Same user data creation
+                  users = [{'id': 1, 'name': 'John Doe'}, {'id': 2, 'name': 'Jane Smith'}]
+
+                  # MANUAL INSTRUMENTATION: ADD span attributes
+                  span.set_attribute('users.count', len(users))
+
+                  # ORIGINAL: Same return structure (updated instrumentation field)
+                  return jsonify({
+                      'users': users,               # ORIGINAL
+                      'metadata': db_data,          # ORIGINAL
+                      'instrumentation': 'manual'   # UPDATED (was 'none')
+                  })
+
+          # ORIGINAL: Same Flask app startup
           app.run(host='0.0.0.0', port=80, debug=True)
+          "
         ports:
         - containerPort: 80
+
+        # MANUAL INSTRUMENTATION: ADD environment variables (REQUIRED)
+        env:
+        - name: OTEL_SERVICE_NAME
+          value: "sample-app-manual"
+        - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+          value: "http://splunk-otel-collector-agent.ao.svc.cluster.local:4318/v1/traces"
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.version=1.0.0,deployment.environment=production"
+
         readinessProbe:
           httpGet:
             path: /healthz
             port: 80
-          initialDelaySeconds: 5
+          initialDelaySeconds: 10
           periodSeconds: 10
 
 ---
