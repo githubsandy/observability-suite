@@ -22,117 +22,88 @@ spec:
         - python
         - -c
         - |
-          # MANUAL INSTRUMENTATION: SIMULATED VERSION (shows code changes without network dependencies)
           from flask import Flask, jsonify
           import time, random, logging
-          import os
-
-          # MANUAL INSTRUMENTATION: SIMULATED OpenTelemetry classes (shows what would be imported)
-          class MockSpan:
-              def __init__(self, name):
-                  self.name = name
-                  self.attributes = {}
-              def set_attribute(self, key, value):
-                  self.attributes[key] = value
-                  print(f'MANUAL INSTRUMENTATION: Span \"{self.name}\" - {key}={value}')
-              def __enter__(self):
-                  print(f'MANUAL INSTRUMENTATION: Starting span \"{self.name}\"')
-                  return self
-              def __exit__(self, *args):
-                  print(f'MANUAL INSTRUMENTATION: Ending span \"{self.name}\" with attributes: {self.attributes}')
-
-          class MockTracer:
-              def start_as_current_span(self, name):
-                  return MockSpan(name)
 
           # ORIGINAL: Same logging setup
           logging.basicConfig(level=logging.INFO)
           logger = logging.getLogger(__name__)
 
-          # MANUAL INSTRUMENTATION: SIMULATED SDK setup (shows what code would be added)
-          print('MANUAL INSTRUMENTATION: Initializing OpenTelemetry SDK (SIMULATED)')
-          print('MANUAL INSTRUMENTATION: - TracerProvider configured')
-          print('MANUAL INSTRUMENTATION: - OTLP Exporter configured')
-          print('MANUAL INSTRUMENTATION: - Service name: sample-app-manual')
-
-          tracer = MockTracer()  # In real version: trace.get_tracer(__name__)
+          # MANUAL INSTRUMENTATION: Simulated SDK setup (shows what would be added)
+          print('MANUAL INSTRUMENTATION: Initializing OpenTelemetry SDK')
+          print('MANUAL INSTRUMENTATION: TracerProvider configured')
+          print('MANUAL INSTRUMENTATION: OTLP Exporter configured for Splunk')
 
           # ORIGINAL: Same Flask app creation
           app = Flask(__name__)
 
-          # MANUAL INSTRUMENTATION: SIMULATED auto-instrumentation (shows what would be added)
-          print('MANUAL INSTRUMENTATION: Flask auto-instrumentation applied (SIMULATED)')
+          print('MANUAL INSTRUMENTATION: Flask auto-instrumentation applied')
 
-          # MANUAL INSTRUMENTATION: WRAP original function with span (business logic unchanged)
+          # MANUAL INSTRUMENTATION: WRAP original function (business logic unchanged)
           def simulate_database_call():
-              with tracer.start_as_current_span('database_operation') as span:
-                  span.set_attribute('db.operation', 'query')
-                  # ORIGINAL CODE: Exact same business logic (UNCHANGED)
-                  time.sleep(random.uniform(0.01, 0.05))
-                  result = {'data': f'record_{random.randint(1000, 9999)}'}
-                  # MANUAL INSTRUMENTATION: ADD span attributes (business logic untouched)
-                  span.set_attribute('db.result_size', len(str(result)))
-                  return result  # ORIGINAL: Same return value
+              print('MANUAL INSTRUMENTATION: Starting database_operation span')
+              # ORIGINAL CODE: Exact same business logic (UNCHANGED)
+              time.sleep(random.uniform(0.01, 0.05))
+              result = {'data': 'record_' + str(random.randint(1000, 9999))}
+              # MANUAL INSTRUMENTATION: Simulated span attributes
+              print('MANUAL INSTRUMENTATION: database_operation - db.operation=query')
+              print('MANUAL INSTRUMENTATION: Ending database_operation span')
+              return result  # ORIGINAL: Same return value
 
           @app.route('/')  # ORIGINAL: Same route decorator
           def home():      # ORIGINAL: Same function name
-              # MANUAL INSTRUMENTATION: WRAP with span
-              with tracer.start_as_current_span('home_endpoint') as span:
-                  # ORIGINAL: Same log message (just updated text)
-                  logger.info('Home endpoint accessed - MANUAL INSTRUMENTATION')
-                  # MANUAL INSTRUMENTATION: ADD span attributes
-                  span.set_attribute('endpoint', 'home')
+              print('MANUAL INSTRUMENTATION: Starting home_endpoint span')
+              logger.info('Home endpoint accessed - MANUAL INSTRUMENTATION')
 
-                  # ORIGINAL: Same business logic call (UNCHANGED)
-                  db_data = simulate_database_call()
+              # ORIGINAL: Same business logic call (UNCHANGED)
+              db_data = simulate_database_call()
 
-                  # ORIGINAL: Same return structure (just updated values)
-                  return jsonify({
-                      'service': 'sample-app',      # ORIGINAL
-                      'status': 'running',          # ORIGINAL
-                      'version': '1.0.0',           # ORIGINAL
-                      'instrumentation': 'manual',  # UPDATED (was 'none')
-                      'data': db_data,              # ORIGINAL
-                      'message': 'MANUAL INSTRUMENTATION: Code changes required but business logic preserved',
-                      'code_changes': 'Added OpenTelemetry imports, SDK setup, and span wrapping'
-                  })
+              print('MANUAL INSTRUMENTATION: home_endpoint - endpoint=home')
+              print('MANUAL INSTRUMENTATION: Ending home_endpoint span')
+
+              # ORIGINAL: Same return structure (just updated values)
+              return jsonify({
+                  'service': 'sample-app-manual',   # UPDATED
+                  'status': 'running',              # ORIGINAL
+                  'version': '1.0.0',               # ORIGINAL
+                  'instrumentation': 'manual',      # UPDATED (was 'none')
+                  'data': db_data,                  # ORIGINAL
+                  'message': 'MANUAL: Code changes required but business logic preserved',
+                  'crash_learning': 'Previous complex version crashed - this shows deployment risk!'
+              })
 
           @app.route('/healthz')  # ORIGINAL: Same route
           def health():           # ORIGINAL: Same function name
-              # MANUAL INSTRUMENTATION: WRAP with span
-              with tracer.start_as_current_span('health_check'):
-                  # ORIGINAL: Same return structure (just updated instrumentation field)
-                  return jsonify({'status': 'healthy', 'instrumentation': 'manual'})
+              print('MANUAL INSTRUMENTATION: Starting health_check span')
+              print('MANUAL INSTRUMENTATION: Ending health_check span')
+              # ORIGINAL: Same return structure (just updated instrumentation field)
+              return jsonify({'status': 'healthy', 'instrumentation': 'manual'})
 
           @app.route('/api/users')  # ORIGINAL: Same route
           def get_users():          # ORIGINAL: Same function name
-              # MANUAL INSTRUMENTATION: WRAP with span
-              with tracer.start_as_current_span('get_users_api') as span:
-                  # ORIGINAL: Same log message (updated text)
-                  logger.info('Getting users - MANUAL INSTRUMENTATION')
+              print('MANUAL INSTRUMENTATION: Starting get_users_api span')
+              logger.info('Getting users - MANUAL INSTRUMENTATION')
 
-                  # ORIGINAL: Same business logic call (UNCHANGED)
-                  db_data = simulate_database_call()
+              # ORIGINAL: Same business logic call (UNCHANGED)
+              db_data = simulate_database_call()
 
-                  # ORIGINAL: Same user data creation (UNCHANGED)
-                  users = [{'id': 1, 'name': 'John Doe'}, {'id': 2, 'name': 'Jane Smith'}]
+              # ORIGINAL: Same user data creation (UNCHANGED)
+              users = [{'id': 1, 'name': 'John Doe'}, {'id': 2, 'name': 'Jane Smith'}]
 
-                  # MANUAL INSTRUMENTATION: ADD span attributes
-                  span.set_attribute('users.count', len(users))
+              print('MANUAL INSTRUMENTATION: get_users_api - users.count=2')
+              print('MANUAL INSTRUMENTATION: Ending get_users_api span')
 
-                  # ORIGINAL: Same return structure (updated instrumentation field)
-                  return jsonify({
-                      'users': users,               # ORIGINAL
-                      'metadata': db_data,          # ORIGINAL
-                      'instrumentation': 'manual',  # UPDATED (was 'none')
-                      'span_info': 'Custom spans created manually in code'
-                  })
+              # ORIGINAL: Same return structure (updated instrumentation field)
+              return jsonify({
+                  'users': users,               # ORIGINAL
+                  'metadata': db_data,          # ORIGINAL
+                  'instrumentation': 'manual',  # UPDATED (was 'none')
+                  'note': 'Business logic unchanged, only observability added'
+              })
 
-          print('MANUAL INSTRUMENTATION: All route handlers wrapped with custom spans')
-          print('MANUAL INSTRUMENTATION: Starting Flask app with integrated tracing')
+          print('MANUAL INSTRUMENTATION: Starting Flask app with simulated tracing')
           # ORIGINAL: Same Flask app startup
           app.run(host='0.0.0.0', port=80, debug=True)
-          "
         ports:
         - containerPort: 80
 
