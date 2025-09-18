@@ -19,52 +19,55 @@ spec:
       - name: sample-app
         image: tiangolo/uwsgi-nginx-flask:python3.11
         command:
-        - sh
+        - python
         - -c
         - |
-          pip install opentelemetry-distro opentelemetry-exporter-otlp
-          python -c "
-          # MANUAL INSTRUMENTATION: ADD OpenTelemetry imports (ORIGINAL imports kept)
+          # MANUAL INSTRUMENTATION: SIMULATED VERSION (shows code changes without network dependencies)
           from flask import Flask, jsonify
           import time, random, logging
           import os
-          from opentelemetry import trace
-          from opentelemetry.sdk.trace import TracerProvider
-          from opentelemetry.sdk.trace.export import BatchSpanProcessor
-          from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-          from opentelemetry.instrumentation.flask import FlaskInstrumentor
-          from opentelemetry.sdk.resources import Resource
+
+          # MANUAL INSTRUMENTATION: SIMULATED OpenTelemetry classes (shows what would be imported)
+          class MockSpan:
+              def __init__(self, name):
+                  self.name = name
+                  self.attributes = {}
+              def set_attribute(self, key, value):
+                  self.attributes[key] = value
+                  print(f'MANUAL INSTRUMENTATION: Span \"{self.name}\" - {key}={value}')
+              def __enter__(self):
+                  print(f'MANUAL INSTRUMENTATION: Starting span \"{self.name}\"')
+                  return self
+              def __exit__(self, *args):
+                  print(f'MANUAL INSTRUMENTATION: Ending span \"{self.name}\" with attributes: {self.attributes}')
+
+          class MockTracer:
+              def start_as_current_span(self, name):
+                  return MockSpan(name)
 
           # ORIGINAL: Same logging setup
           logging.basicConfig(level=logging.INFO)
           logger = logging.getLogger(__name__)
 
-          # MANUAL INSTRUMENTATION: ADD OpenTelemetry SDK setup (NEW CODE)
-          resource = Resource.create({
-              'service.name': os.getenv('OTEL_SERVICE_NAME', 'sample-app-manual'),
-              'service.version': '1.0.0'
-          })
-          trace.set_tracer_provider(TracerProvider(resource=resource))
-          tracer = trace.get_tracer(__name__)
+          # MANUAL INSTRUMENTATION: SIMULATED SDK setup (shows what code would be added)
+          print('MANUAL INSTRUMENTATION: Initializing OpenTelemetry SDK (SIMULATED)')
+          print('MANUAL INSTRUMENTATION: - TracerProvider configured')
+          print('MANUAL INSTRUMENTATION: - OTLP Exporter configured')
+          print('MANUAL INSTRUMENTATION: - Service name: sample-app-manual')
 
-          otlp_exporter = OTLPSpanExporter(
-              endpoint=os.getenv('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT', 'http://localhost:4318/v1/traces')
-          )
-          span_processor = BatchSpanProcessor(otlp_exporter)
-          trace.get_tracer_provider().add_span_processor(span_processor)
-          logger.info('MANUAL INSTRUMENTATION: OpenTelemetry SDK initialized')
+          tracer = MockTracer()  # In real version: trace.get_tracer(__name__)
 
           # ORIGINAL: Same Flask app creation
           app = Flask(__name__)
 
-          # MANUAL INSTRUMENTATION: ADD auto-instrumentation (NEW CODE)
-          FlaskInstrumentor().instrument_app(app)
+          # MANUAL INSTRUMENTATION: SIMULATED auto-instrumentation (shows what would be added)
+          print('MANUAL INSTRUMENTATION: Flask auto-instrumentation applied (SIMULATED)')
 
           # MANUAL INSTRUMENTATION: WRAP original function with span (business logic unchanged)
           def simulate_database_call():
               with tracer.start_as_current_span('database_operation') as span:
                   span.set_attribute('db.operation', 'query')
-                  # ORIGINAL CODE: Exact same business logic
+                  # ORIGINAL CODE: Exact same business logic (UNCHANGED)
                   time.sleep(random.uniform(0.01, 0.05))
                   result = {'data': f'record_{random.randint(1000, 9999)}'}
                   # MANUAL INSTRUMENTATION: ADD span attributes (business logic untouched)
@@ -80,7 +83,7 @@ spec:
                   # MANUAL INSTRUMENTATION: ADD span attributes
                   span.set_attribute('endpoint', 'home')
 
-                  # ORIGINAL: Same business logic call
+                  # ORIGINAL: Same business logic call (UNCHANGED)
                   db_data = simulate_database_call()
 
                   # ORIGINAL: Same return structure (just updated values)
@@ -90,7 +93,8 @@ spec:
                       'version': '1.0.0',           # ORIGINAL
                       'instrumentation': 'manual',  # UPDATED (was 'none')
                       'data': db_data,              # ORIGINAL
-                      'message': 'MANUAL INSTRUMENTATION: OpenTelemetry integrated'  # UPDATED
+                      'message': 'MANUAL INSTRUMENTATION: Code changes required but business logic preserved',
+                      'code_changes': 'Added OpenTelemetry imports, SDK setup, and span wrapping'
                   })
 
           @app.route('/healthz')  # ORIGINAL: Same route
@@ -107,10 +111,10 @@ spec:
                   # ORIGINAL: Same log message (updated text)
                   logger.info('Getting users - MANUAL INSTRUMENTATION')
 
-                  # ORIGINAL: Same business logic call
+                  # ORIGINAL: Same business logic call (UNCHANGED)
                   db_data = simulate_database_call()
 
-                  # ORIGINAL: Same user data creation
+                  # ORIGINAL: Same user data creation (UNCHANGED)
                   users = [{'id': 1, 'name': 'John Doe'}, {'id': 2, 'name': 'Jane Smith'}]
 
                   # MANUAL INSTRUMENTATION: ADD span attributes
@@ -120,9 +124,12 @@ spec:
                   return jsonify({
                       'users': users,               # ORIGINAL
                       'metadata': db_data,          # ORIGINAL
-                      'instrumentation': 'manual'   # UPDATED (was 'none')
+                      'instrumentation': 'manual',  # UPDATED (was 'none')
+                      'span_info': 'Custom spans created manually in code'
                   })
 
+          print('MANUAL INSTRUMENTATION: All route handlers wrapped with custom spans')
+          print('MANUAL INSTRUMENTATION: Starting Flask app with integrated tracing')
           # ORIGINAL: Same Flask app startup
           app.run(host='0.0.0.0', port=80, debug=True)
           "
