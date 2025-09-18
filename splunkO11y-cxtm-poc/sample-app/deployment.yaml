@@ -55,8 +55,8 @@ spec:
         readinessProbe:
           httpGet:
             path: /healthz
-            port: 5000
-          initialDelaySeconds: 15
+            port: 80
+          initialDelaySeconds: 5
           periodSeconds: 10
 
 ---
@@ -70,6 +70,6 @@ spec:
     app: sample-app
   ports:
   - port: 8080
-    targetPort: 5000
+    targetPort: 80
     nodePort: 30080
   type: NodePort
