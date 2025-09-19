@@ -1,3 +1,4 @@
+#test
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -39,18 +40,22 @@ spec:
             counter=$((counter + 1))
             timestamp=$(date +%s)000
 
-            # Generate random metrics
-            cpu_usage=$(awk -v min=15 -v max=95 'BEGIN{srand(); print min+rand()*(max-min)}')
-            memory_usage=$(awk -v min=25 -v max=85 'BEGIN{srand(); print min+rand()*(max-min)}')
+            # Generate random metrics using simpler approach
+            cpu_base=$((15 + RANDOM % 80))  # 15-95
+            memory_base=$((25 + RANDOM % 60))  # 25-85
+            cpu_usage="${cpu_base}.$(( RANDOM % 10 ))"
+            memory_usage="${memory_base}.$(( RANDOM % 10 ))"
 
             # Create spikes periodically for testing alerts
             if [ $((counter % 10)) -eq 0 ]; then
-              cpu_usage=$(awk -v min=91 -v max=98 'BEGIN{srand(); print min+rand()*(max-min)}')
+              cpu_spike=$((91 + RANDOM % 7))  # 91-98
+              cpu_usage="${cpu_spike}.$(( RANDOM % 10 ))"
               echo "🚨 HIGH CPU SPIKE: $cpu_usage%"
             fi
 
             if [ $((counter % 15)) -eq 0 ]; then
-              memory_usage=$(awk -v min=89 -v max=95 'BEGIN{srand(); print min+rand()*(max-min)}')
+              memory_spike=$((89 + RANDOM % 6))  # 89-95
+              memory_usage="${memory_spike}.$(( RANDOM % 10 ))"
               echo "🚨 HIGH MEMORY SPIKE: $memory_usage%"
             fi
 
