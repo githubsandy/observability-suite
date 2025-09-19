@@ -19,85 +19,105 @@ spec:
     spec:
       containers:
       - name: sample-app-trial
-        image: python:3.9-slim
+        image: curlimages/curl:latest
         env:
-        - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: "https://ingest.au0.signalfx.com"
-        - name: OTEL_EXPORTER_OTLP_HEADERS
-          value: "X-SF-Token=pceyC0WC6s-0JiFsfzuWWA"
-        - name: OTEL_SERVICE_NAME
-          value: "sample-app-calolab"
-        - name: OTEL_RESOURCE_ATTRIBUTES
-          value: "service.name=sample-app-calolab,service.version=1.0.0,deployment.environment=trial,cluster=calolab-k8s"
-        - name: SPLUNK_ACCESS_TOKEN
+        - name: SPLUNK_TOKEN
           value: "pceyC0WC6s-0JiFsfzuWWA"
         - name: SPLUNK_REALM
           value: "au0"
         command: ["sh", "-c"]
         args:
         - |
-          pip install requests
-          python -c '
-          import time
-          import random
-          import requests
-          import json
-          import os
-          from datetime import datetime
+          echo "Starting Splunk O11y Data Sender for CaloLab Alert POC"
+          echo "Token: $SPLUNK_TOKEN"
+          echo "Realm: $SPLUNK_REALM"
+          echo "Target URL: https://ingest.$SPLUNK_REALM.signalfx.com/v2/datapoint"
 
-          SPLUNK_TOKEN = "pceyC0WC6s-0JiFsfzuWWA"
-          SPLUNK_REALM = "au0"
-          INGEST_URL = f"https://ingest.{SPLUNK_REALM}.signalfx.com/v2/datapoint"
+          counter=0
 
-          print(f"Starting Splunk O11y Alert POC Data Generator")
-          print(f"Sending data to: {INGEST_URL}")
+          while true; do
+            counter=$((counter + 1))
+            timestamp=$(date +%s)000
 
-          counter = 0
-          while True:
-              counter += 1
-              current_time = int(time.time() * 1000)
-              cpu_usage = random.uniform(15, 95)
-              memory_usage = random.uniform(25, 88)
-              response_time = random.uniform(100, 8000)
-              error_rate = random.uniform(0, 12)
+            # Generate random metrics
+            cpu_usage=$(awk -v min=15 -v max=95 'BEGIN{srand(); print min+rand()*(max-min)}')
+            memory_usage=$(awk -v min=25 -v max=85 'BEGIN{srand(); print min+rand()*(max-min)}')
 
-              if counter % 10 == 0:
-                  cpu_usage = random.uniform(91, 98)
-                  print(f"HIGH CPU spike: {cpu_usage:.2f}%")
-              if counter % 15 == 0:
-                  memory_usage = random.uniform(89, 95)
-                  print(f"HIGH MEMORY spike: {memory_usage:.2f}%")
+            # Create spikes periodically for testing alerts
+            if [ $((counter % 10)) -eq 0 ]; then
+              cpu_usage=$(awk -v min=91 -v max=98 'BEGIN{srand(); print min+rand()*(max-min)}')
+              echo "🚨 HIGH CPU SPIKE: $cpu_usage%"
+            fi
 
-              metrics_data = {
-                  "gauge": [
-                      {
-                          "metric": "calolab.cpu.utilization",
-                          "value": cpu_usage,
-                          "timestamp": current_time,
-                          "dimensions": {"service": "sample-app-calolab", "host": "calolab-k8s", "environment": "trial"}
-                      },
-                      {
-                          "metric": "calolab.memory.utilization",
-                          "value": memory_usage,
-                          "timestamp": current_time,
-                          "dimensions": {"service": "sample-app-calolab", "host": "calolab-k8s", "environment": "trial"}
-                      }
-                  ]
+            if [ $((counter % 15)) -eq 0 ]; then
+              memory_usage=$(awk -v min=89 -v max=95 'BEGIN{srand(); print min+rand()*(max-min)}')
+              echo "🚨 HIGH MEMORY SPIKE: $memory_usage%"
+            fi
+
+            # Create JSON payload
+            json_payload=$(cat <<EOF
+          {
+            "gauge": [
+              {
+                "metric": "calolab.cpu.utilization",
+                "value": $cpu_usage,
+                "timestamp": $timestamp,
+                "dimensions": {
+                  "service": "sample-app-calolab",
+                  "host": "calolab-k8s-worker",
+                  "environment": "trial",
+                  "cluster": "calolab"
+                }
+              },
+              {
+                "metric": "calolab.memory.utilization",
+                "value": $memory_usage,
+                "timestamp": $timestamp,
+                "dimensions": {
+                  "service": "sample-app-calolab",
+                  "host": "calolab-k8s-worker",
+                  "environment": "trial",
+                  "cluster": "calolab"
+                }
+              },
+              {
+                "metric": "calolab.application.uptime",
+                "value": $counter,
+                "timestamp": $timestamp,
+                "dimensions": {
+                  "service": "sample-app-calolab",
+                  "environment": "trial",
+                  "cluster": "calolab"
+                }
               }
+            ]
+          }
+          EOF
+            )
 
-              headers = {"X-SF-Token": SPLUNK_TOKEN, "Content-Type": "application/json"}
+            # Send to Splunk O11y
+            response=$(curl -s -w "HTTPSTATUS:%{http_code}" \
+              -X POST \
+              -H "X-SF-Token: $SPLUNK_TOKEN" \
+              -H "Content-Type: application/json" \
+              -H "User-Agent: CaloLab-Alert-POC/1.0" \
+              -d "$json_payload" \
+              "https://ingest.$SPLUNK_REALM.signalfx.com/v2/datapoint")
 
-              try:
-                  response = requests.post(INGEST_URL, headers=headers, json=metrics_data, timeout=10)
-                  if response.status_code == 200:
-                      print(f"[{datetime.now().strftime(\"%H:%M:%S\")}] Metrics sent - CPU: {cpu_usage:.1f}%, Memory: {memory_usage:.1f}%")
-                  else:
-                      print(f"Failed - Status: {response.status_code}")
-              except Exception as e:
-                  print(f"Error: {e}")
+            # Extract HTTP status
+            http_status=$(echo $response | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
 
-              time.sleep(30)
-          '
+            current_time=$(date '+%H:%M:%S')
+
+            if [ "$http_status" = "200" ]; then
+              echo "✅ [$current_time] Metrics sent successfully - CPU: ${cpu_usage}%, Memory: ${memory_usage}%, Counter: $counter"
+            else
+              echo "❌ [$current_time] Failed to send metrics - HTTP Status: $http_status"
+              echo "Response: $response"
+            fi
+
+            sleep 30
+          done
         resources:
           requests:
             memory: "128Mi"
