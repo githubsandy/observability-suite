@@ -1,0 +1,102 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trial-otel-collector-config
+  namespace: splunk-trial-test
+data:
+  otel-collector-config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      batch:
+        send_batch_size: 1000
+        timeout: 5s
+
+    exporters:
+      signalfx:
+        access_token: "pceyC0WC6s-0JiFsfzuWWA"
+        realm: "au0"
+        api_url: "https://api.au0.signalfx.com"
+        ingest_url: "https://ingest.au0.signalfx.com"
+
+    service:
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [signalfx]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trial-otel-collector
+  namespace: splunk-trial-test
+  labels:
+    app: trial-otel-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trial-otel-collector
+  template:
+    metadata:
+      labels:
+        app: trial-otel-collector
+    spec:
+      containers:
+      - name: otel-collector
+        image: otel/opentelemetry-collector-contrib:0.88.0
+        args:
+        - --config=/etc/otel-collector-config.yaml
+        ports:
+        - containerPort: 4317
+          name: otlp-grpc
+        - containerPort: 4318
+          name: otlp-http
+        - containerPort: 8888
+          name: metrics
+        volumeMounts:
+        - name: config
+          mountPath: /etc/otel-collector-config.yaml
+          subPath: otel-collector-config.yaml
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      volumes:
+      - name: config
+        configMap:
+          name: trial-otel-collector-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trial-otel-collector-service
+  namespace: splunk-trial-test
+  labels:
+    app: trial-otel-collector
+spec:
+  selector:
+    app: trial-otel-collector
+  ports:
+  - port: 4317
+    targetPort: 4317
+    name: otlp-grpc
+  - port: 4318
+    targetPort: 4318
+    name: otlp-http
+  - port: 8888
+    targetPort: 8888
+    name: metrics
+  type: ClusterIP

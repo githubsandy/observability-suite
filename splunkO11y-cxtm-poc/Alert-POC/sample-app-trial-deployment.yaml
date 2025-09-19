@@ -30,8 +30,8 @@ spec:
         args:
         - |
           echo "Starting Splunk O11y Data Sender for CaloLab Alert POC"
-          echo "Using OTEL Collector Proxy: cxtvng-splunk-otel-collector-agent.ao.svc.cluster.local:4318"
-          echo "Final destination: Splunk O11y ($SPLUNK_REALM realm)"
+          echo "Using Trial OTEL Collector: trial-otel-collector-service.splunk-trial-test.svc.cluster.local:4318"
+          echo "Final destination: Splunk O11y Trial ($SPLUNK_REALM realm)"
 
           counter=0
 
@@ -153,7 +153,7 @@ spec:
               -H "Content-Type: application/json" \
               -H "User-Agent: CaloLab-Alert-POC/1.0" \
               -d "$otel_payload" \
-              "http://cxtvng-splunk-otel-collector-agent.ao.svc.cluster.local:4318/v1/metrics")
+              "http://trial-otel-collector-service.splunk-trial-test.svc.cluster.local:4318/v1/metrics")
 
             # Extract HTTP status
             http_status=$(echo $response | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
