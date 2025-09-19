@@ -30,9 +30,8 @@ spec:
         args:
         - |
           echo "Starting Splunk O11y Data Sender for CaloLab Alert POC"
-          echo "Token: $SPLUNK_TOKEN"
-          echo "Realm: $SPLUNK_REALM"
-          echo "Target URL: https://ingest.$SPLUNK_REALM.signalfx.com/v2/datapoint"
+          echo "Using OTEL Collector Proxy: cxtvng-splunk-otel-collector-agent.ao.svc.cluster.local:4318"
+          echo "Final destination: Splunk O11y ($SPLUNK_REALM realm)"
 
           counter=0
 
@@ -100,14 +99,61 @@ spec:
           EOF
             )
 
-            # Send to Splunk O11y
+            # Send to existing OTEL collector (proxy to Splunk O11y)
+            otel_payload=$(cat <<EOF
+          {
+            "resourceMetrics": [
+              {
+                "resource": {
+                  "attributes": [
+                    {"key": "service.name", "value": {"stringValue": "sample-app-calolab"}},
+                    {"key": "host.name", "value": {"stringValue": "calolab-k8s-worker"}},
+                    {"key": "environment", "value": {"stringValue": "trial"}},
+                    {"key": "cluster", "value": {"stringValue": "calolab"}}
+                  ]
+                },
+                "scopeMetrics": [
+                  {
+                    "metrics": [
+                      {
+                        "name": "calolab.cpu.utilization",
+                        "unit": "percent",
+                        "gauge": {
+                          "dataPoints": [
+                            {
+                              "timeUnixNano": "${timestamp}000000",
+                              "asDouble": $cpu_usage
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "name": "calolab.memory.utilization",
+                        "unit": "percent",
+                        "gauge": {
+                          "dataPoints": [
+                            {
+                              "timeUnixNano": "${timestamp}000000",
+                              "asDouble": $memory_usage
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+          EOF
+            )
+
             response=$(curl -s -w "HTTPSTATUS:%{http_code}" \
               -X POST \
-              -H "X-SF-Token: $SPLUNK_TOKEN" \
               -H "Content-Type: application/json" \
               -H "User-Agent: CaloLab-Alert-POC/1.0" \
-              -d "$json_payload" \
-              "https://ingest.$SPLUNK_REALM.signalfx.com/v2/datapoint")
+              -d "$otel_payload" \
+              "http://cxtvng-splunk-otel-collector-agent.ao.svc.cluster.local:4318/v1/metrics")
 
             # Extract HTTP status
             http_status=$(echo $response | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
