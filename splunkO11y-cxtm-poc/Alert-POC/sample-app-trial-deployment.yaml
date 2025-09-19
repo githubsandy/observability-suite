@@ -33,9 +33,11 @@ spec:
           value: "pceyC0WC6s-0JiFsfzuWWA"
         - name: SPLUNK_REALM
           value: "au0"
-        command: ["python", "-c"]
+        command: ["sh", "-c"]
         args:
         - |
+          pip install requests
+          python -c '
           import time
           import random
           import requests
@@ -43,128 +45,59 @@ spec:
           import os
           from datetime import datetime
 
-          # Splunk O11y configuration
-          SPLUNK_TOKEN = os.getenv('SPLUNK_ACCESS_TOKEN', 'pceyC0WC6s-0JiFsfzuWWA')
-          SPLUNK_REALM = os.getenv('SPLUNK_REALM', 'au0')
+          SPLUNK_TOKEN = "pceyC0WC6s-0JiFsfzuWWA"
+          SPLUNK_REALM = "au0"
           INGEST_URL = f"https://ingest.{SPLUNK_REALM}.signalfx.com/v2/datapoint"
 
           print(f"Starting Splunk O11y Alert POC Data Generator")
           print(f"Sending data to: {INGEST_URL}")
-          print(f"Service: sample-app-calolab")
 
           counter = 0
-
           while True:
               counter += 1
-              current_time = int(time.time() * 1000)  # milliseconds
+              current_time = int(time.time() * 1000)
+              cpu_usage = random.uniform(15, 95)
+              memory_usage = random.uniform(25, 88)
+              response_time = random.uniform(100, 8000)
+              error_rate = random.uniform(0, 12)
 
-              # Generate realistic metric data for alerting scenarios
-              cpu_usage = random.uniform(15, 95)  # Sometimes high for CPU alerts
-              memory_usage = random.uniform(25, 88)  # Sometimes high for memory alerts
-              response_time = random.uniform(100, 8000)  # Sometimes slow for latency alerts
-              error_rate = random.uniform(0, 12)  # Sometimes high for error rate alerts
+              if counter % 10 == 0:
+                  cpu_usage = random.uniform(91, 98)
+                  print(f"HIGH CPU spike: {cpu_usage:.2f}%")
+              if counter % 15 == 0:
+                  memory_usage = random.uniform(89, 95)
+                  print(f"HIGH MEMORY spike: {memory_usage:.2f}%")
 
-              # Simulate periodic spikes for testing alert triggers
-              if counter % 10 == 0:  # Every 5 minutes (10 * 30s)
-                  cpu_usage = random.uniform(91, 98)  # High CPU spike
-                  print(f"🚨 Generating HIGH CPU spike: {cpu_usage:.2f}%")
-
-              if counter % 15 == 0:  # Every 7.5 minutes
-                  memory_usage = random.uniform(89, 95)  # High memory spike
-                  print(f"🚨 Generating HIGH MEMORY spike: {memory_usage:.2f}%")
-
-              if counter % 8 == 0:  # Every 4 minutes
-                  response_time = random.uniform(5000, 9000)  # High latency spike
-                  print(f"🚨 Generating HIGH LATENCY spike: {response_time:.2f}ms")
-
-              if counter % 12 == 0:  # Every 6 minutes
-                  error_rate = random.uniform(8, 15)  # High error rate spike
-                  print(f"🚨 Generating HIGH ERROR RATE spike: {error_rate:.2f}%")
-
-              # Prepare metrics payload for Splunk O11y
               metrics_data = {
                   "gauge": [
                       {
                           "metric": "calolab.cpu.utilization",
                           "value": cpu_usage,
                           "timestamp": current_time,
-                          "dimensions": {
-                              "service": "sample-app-calolab",
-                              "host": "calolab-k8s-worker",
-                              "environment": "trial",
-                              "cluster": "calolab",
-                              "namespace": "splunk-trial-test"
-                          }
+                          "dimensions": {"service": "sample-app-calolab", "host": "calolab-k8s", "environment": "trial"}
                       },
                       {
                           "metric": "calolab.memory.utilization",
                           "value": memory_usage,
                           "timestamp": current_time,
-                          "dimensions": {
-                              "service": "sample-app-calolab",
-                              "host": "calolab-k8s-worker",
-                              "environment": "trial",
-                              "cluster": "calolab",
-                              "namespace": "splunk-trial-test"
-                          }
-                      },
-                      {
-                          "metric": "calolab.http.response.time",
-                          "value": response_time,
-                          "timestamp": current_time,
-                          "dimensions": {
-                              "service": "sample-app-calolab",
-                              "endpoint": "/api/health",
-                              "method": "GET",
-                              "environment": "trial",
-                              "cluster": "calolab"
-                          }
-                      },
-                      {
-                          "metric": "calolab.http.error.rate",
-                          "value": error_rate,
-                          "timestamp": current_time,
-                          "dimensions": {
-                              "service": "sample-app-calolab",
-                              "endpoint": "/api/health",
-                              "environment": "trial",
-                              "cluster": "calolab"
-                          }
-                      },
-                      {
-                          "metric": "calolab.application.requests.total",
-                          "value": random.randint(50, 200),
-                          "timestamp": current_time,
-                          "dimensions": {
-                              "service": "sample-app-calolab",
-                              "environment": "trial",
-                              "cluster": "calolab"
-                          }
+                          "dimensions": {"service": "sample-app-calolab", "host": "calolab-k8s", "environment": "trial"}
                       }
                   ]
               }
 
-              # Send metrics to Splunk O11y
-              headers = {
-                  "X-SF-Token": SPLUNK_TOKEN,
-                  "Content-Type": "application/json",
-                  "User-Agent": "CaloLab-Alert-POC/1.0"
-              }
+              headers = {"X-SF-Token": SPLUNK_TOKEN, "Content-Type": "application/json"}
 
               try:
                   response = requests.post(INGEST_URL, headers=headers, json=metrics_data, timeout=10)
-
                   if response.status_code == 200:
-                      print(f"✅ [{datetime.now().strftime('%H:%M:%S')}] Metrics sent successfully - CPU: {cpu_usage:.1f}%, Memory: {memory_usage:.1f}%, RT: {response_time:.0f}ms, Errors: {error_rate:.1f}%")
+                      print(f"[{datetime.now().strftime(\"%H:%M:%S\")}] Metrics sent - CPU: {cpu_usage:.1f}%, Memory: {memory_usage:.1f}%")
                   else:
-                      print(f"❌ Failed to send metrics - Status: {response.status_code}, Response: {response.text}")
-
-              except requests.exceptions.RequestException as e:
-                  print(f"❌ Network error sending metrics: {e}")
+                      print(f"Failed - Status: {response.status_code}")
               except Exception as e:
-                  print(f"❌ Unexpected error: {e}")
+                  print(f"Error: {e}")
 
-              time.sleep(30)  # Send data every 30 seconds
+              time.sleep(30)
+          '
         resources:
           requests:
             memory: "128Mi"
