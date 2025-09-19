@@ -1,0 +1,217 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-app-trial
+  namespace: splunk-trial-test
+  labels:
+    app: sample-app-trial
+    purpose: splunk-o11y-alerting-poc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sample-app-trial
+  template:
+    metadata:
+      labels:
+        app: sample-app-trial
+        purpose: splunk-o11y-alerting-poc
+    spec:
+      containers:
+      - name: sample-app-trial
+        image: python:3.9-slim
+        env:
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "https://ingest.au0.signalfx.com"
+        - name: OTEL_EXPORTER_OTLP_HEADERS
+          value: "X-SF-Token=pceyC0WC6s-0JiFsfzuWWA"
+        - name: OTEL_SERVICE_NAME
+          value: "sample-app-calolab"
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.name=sample-app-calolab,service.version=1.0.0,deployment.environment=trial,cluster=calolab-k8s"
+        - name: SPLUNK_ACCESS_TOKEN
+          value: "pceyC0WC6s-0JiFsfzuWWA"
+        - name: SPLUNK_REALM
+          value: "au0"
+        command: ["python", "-c"]
+        args:
+        - |
+          import time
+          import random
+          import requests
+          import json
+          import os
+          from datetime import datetime
+
+          # Splunk O11y configuration
+          SPLUNK_TOKEN = os.getenv('SPLUNK_ACCESS_TOKEN', 'pceyC0WC6s-0JiFsfzuWWA')
+          SPLUNK_REALM = os.getenv('SPLUNK_REALM', 'au0')
+          INGEST_URL = f"https://ingest.{SPLUNK_REALM}.signalfx.com/v2/datapoint"
+
+          print(f"Starting Splunk O11y Alert POC Data Generator")
+          print(f"Sending data to: {INGEST_URL}")
+          print(f"Service: sample-app-calolab")
+
+          counter = 0
+
+          while True:
+              counter += 1
+              current_time = int(time.time() * 1000)  # milliseconds
+
+              # Generate realistic metric data for alerting scenarios
+              cpu_usage = random.uniform(15, 95)  # Sometimes high for CPU alerts
+              memory_usage = random.uniform(25, 88)  # Sometimes high for memory alerts
+              response_time = random.uniform(100, 8000)  # Sometimes slow for latency alerts
+              error_rate = random.uniform(0, 12)  # Sometimes high for error rate alerts
+
+              # Simulate periodic spikes for testing alert triggers
+              if counter % 10 == 0:  # Every 5 minutes (10 * 30s)
+                  cpu_usage = random.uniform(91, 98)  # High CPU spike
+                  print(f"🚨 Generating HIGH CPU spike: {cpu_usage:.2f}%")
+
+              if counter % 15 == 0:  # Every 7.5 minutes
+                  memory_usage = random.uniform(89, 95)  # High memory spike
+                  print(f"🚨 Generating HIGH MEMORY spike: {memory_usage:.2f}%")
+
+              if counter % 8 == 0:  # Every 4 minutes
+                  response_time = random.uniform(5000, 9000)  # High latency spike
+                  print(f"🚨 Generating HIGH LATENCY spike: {response_time:.2f}ms")
+
+              if counter % 12 == 0:  # Every 6 minutes
+                  error_rate = random.uniform(8, 15)  # High error rate spike
+                  print(f"🚨 Generating HIGH ERROR RATE spike: {error_rate:.2f}%")
+
+              # Prepare metrics payload for Splunk O11y
+              metrics_data = {
+                  "gauge": [
+                      {
+                          "metric": "calolab.cpu.utilization",
+                          "value": cpu_usage,
+                          "timestamp": current_time,
+                          "dimensions": {
+                              "service": "sample-app-calolab",
+                              "host": "calolab-k8s-worker",
+                              "environment": "trial",
+                              "cluster": "calolab",
+                              "namespace": "splunk-trial-test"
+                          }
+                      },
+                      {
+                          "metric": "calolab.memory.utilization",
+                          "value": memory_usage,
+                          "timestamp": current_time,
+                          "dimensions": {
+                              "service": "sample-app-calolab",
+                              "host": "calolab-k8s-worker",
+                              "environment": "trial",
+                              "cluster": "calolab",
+                              "namespace": "splunk-trial-test"
+                          }
+                      },
+                      {
+                          "metric": "calolab.http.response.time",
+                          "value": response_time,
+                          "timestamp": current_time,
+                          "dimensions": {
+                              "service": "sample-app-calolab",
+                              "endpoint": "/api/health",
+                              "method": "GET",
+                              "environment": "trial",
+                              "cluster": "calolab"
+                          }
+                      },
+                      {
+                          "metric": "calolab.http.error.rate",
+                          "value": error_rate,
+                          "timestamp": current_time,
+                          "dimensions": {
+                              "service": "sample-app-calolab",
+                              "endpoint": "/api/health",
+                              "environment": "trial",
+                              "cluster": "calolab"
+                          }
+                      },
+                      {
+                          "metric": "calolab.application.requests.total",
+                          "value": random.randint(50, 200),
+                          "timestamp": current_time,
+                          "dimensions": {
+                              "service": "sample-app-calolab",
+                              "environment": "trial",
+                              "cluster": "calolab"
+                          }
+                      }
+                  ]
+              }
+
+              # Send metrics to Splunk O11y
+              headers = {
+                  "X-SF-Token": SPLUNK_TOKEN,
+                  "Content-Type": "application/json",
+                  "User-Agent": "CaloLab-Alert-POC/1.0"
+              }
+
+              try:
+                  response = requests.post(INGEST_URL, headers=headers, json=metrics_data, timeout=10)
+
+                  if response.status_code == 200:
+                      print(f"✅ [{datetime.now().strftime('%H:%M:%S')}] Metrics sent successfully - CPU: {cpu_usage:.1f}%, Memory: {memory_usage:.1f}%, RT: {response_time:.0f}ms, Errors: {error_rate:.1f}%")
+                  else:
+                      print(f"❌ Failed to send metrics - Status: {response.status_code}, Response: {response.text}")
+
+              except requests.exceptions.RequestException as e:
+                  print(f"❌ Network error sending metrics: {e}")
+              except Exception as e:
+                  print(f"❌ Unexpected error: {e}")
+
+              time.sleep(30)  # Send data every 30 seconds
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "print('alive')"
+          initialDelaySeconds: 30
+          periodSeconds: 60
+        readinessProbe:
+          exec:
+            command:
+            - python
+            - -c
+            - "print('ready')"
+          initialDelaySeconds: 10
+          periodSeconds: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sample-app-trial-service
+  namespace: splunk-trial-test
+  labels:
+    app: sample-app-trial
+    purpose: splunk-o11y-alerting-poc
+spec:
+  selector:
+    app: sample-app-trial
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: splunk-trial-test
+  labels:
+    purpose: splunk-o11y-alerting-poc
+    environment: trial
